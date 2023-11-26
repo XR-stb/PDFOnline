@@ -1,10 +1,10 @@
 package pdf
 
 import (
+	"errors"
 	"fmt"
 	"mime/multipart"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
@@ -14,19 +14,24 @@ import (
 	"backend/pkg/static"
 )
 
-func Create(c *gin.Context, title, description string, f *multipart.FileHeader) error {
+var (
+	ErrForbidden = errors.New("forbidden")
+)
+
+func Create(author, host, title, description string, f *multipart.FileHeader) error {
 	pdf := models.PDF{
 		Id:          uuid.New().String(),
+		Author:      author,
 		Title:       title,
 		Description: description,
 	}
 
-	err := static.UploadPdf(fmt.Sprintf("%s.pdf", pdf.Id), f)
+	err := static.UploadPdf(pdfFileName(pdf.Id), f)
 	if err != nil {
 		return err
 	}
 
-	pdf.Url = fmt.Sprintf("http://%s:%s%s/%s.pdf", c.Request.Host, c.Request.URL.Port(), apiutil.StaticRootPdf, pdf.Id)
+	pdf.Url = pdfUrl(host, pdf.Id)
 
 	// TODO: generate cover and save
 
@@ -47,19 +52,31 @@ func List() ([]*models.PDF, error) {
 	return pdfs, nil
 }
 
-func Update(id string, title, description *string) error {
+type UpdateOption struct {
+	Id          string
+	UserId      string
+	IsAdmin     bool
+	Title       *string
+	Description *string
+}
+
+func Update(opt UpdateOption) error {
 	pdf := models.PDF{}
 	db := database.Instance()
-	if err := db.First(&pdf, "id = ?", id).Error; err != nil {
+	if err := db.First(&pdf, "id = ?", opt.Id).Error; err != nil {
 		return err
 	}
 
-	if title != nil {
-		pdf.Title = *title
+	if !opt.IsAdmin && pdf.Author != opt.UserId {
+		return ErrForbidden
 	}
 
-	if description != nil {
-		pdf.Description = *description
+	if opt.Title != nil {
+		pdf.Title = *opt.Title
+	}
+
+	if opt.Description != nil {
+		pdf.Description = *opt.Description
 	}
 
 	if err := db.Save(&pdf).Error; err != nil {
@@ -69,11 +86,21 @@ func Update(id string, title, description *string) error {
 	return nil
 }
 
-func Delete(id string) error {
+type DeleteOption struct {
+	Id      string
+	UserId  string
+	IsAdmin bool
+}
+
+func Delete(opt DeleteOption) error {
 	pdf := models.PDF{}
 	db := database.Instance()
-	if err := db.First(&pdf, "id = ?", id).Error; err != nil {
+	if err := db.First(&pdf, "id = ?", opt.Id).Error; err != nil {
 		return err
+	}
+
+	if !opt.IsAdmin && pdf.Author != opt.UserId {
+		return ErrForbidden
 	}
 
 	if err := db.Delete(&pdf).Error; err != nil {
@@ -82,10 +109,18 @@ func Delete(id string) error {
 
 	// async delete pdf file
 	go func() {
-		if err := static.DeletePdf(fmt.Sprintf("%s.pdf", pdf.Id)); err != nil {
+		if err := static.DeletePdf(pdfFileName(opt.Id)); err != nil {
 			logrus.Error(err)
 		}
 	}()
 
 	return nil
+}
+
+func pdfFileName(id string) string {
+	return fmt.Sprintf("%s.pdf", id)
+}
+
+func pdfUrl(host, id string) string {
+	return fmt.Sprintf("http://%s%s/%s", host, apiutil.StaticRootPdf, pdfFileName(id))
 }

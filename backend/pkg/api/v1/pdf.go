@@ -10,7 +10,10 @@ import (
 	"gorm.io/gorm"
 
 	"backend/pkg/api/apiutil"
+	"backend/pkg/api/hooks"
 	"backend/pkg/pdf"
+	"backend/pkg/user"
+	"backend/pkg/user/role"
 )
 
 type PdfAPI struct{}
@@ -20,6 +23,7 @@ func (p PdfAPI) Routes() []apiutil.Route {
 		{
 			Method:  http.MethodPost,
 			Pattern: "/v1/pdfs",
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleGuest)},
 			Handler: p.Upload,
 		},
 		{
@@ -28,13 +32,15 @@ func (p PdfAPI) Routes() []apiutil.Route {
 			Handler: p.List,
 		},
 		{
-			Method:  http.MethodPut,
+			Method:  http.MethodPatch,
 			Pattern: "/v1/pdfs/:id",
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleUser)},
 			Handler: p.Update,
 		},
 		{
 			Method:  http.MethodDelete,
 			Pattern: "/v1/pdfs/:id",
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleUser)},
 			Handler: p.Delete,
 		},
 	}
@@ -70,7 +76,11 @@ func (p PdfAPI) Upload(c *gin.Context) {
 		return
 	}
 
-	if err := pdf.Create(c, params.Title, params.Description, f); err != nil {
+	userId := c.GetString(apiutil.CtxUserId)
+	if userId == "" || userId == user.GuestUser.Id {
+		userId = user.AdminUser.Id
+	}
+	if err := pdf.Create(userId, c.Request.Host, params.Title, params.Description, f); err != nil {
 		logrus.Warn(err)
 		c.Status(http.StatusInternalServerError)
 		return
@@ -107,11 +117,20 @@ func (p PdfAPI) Update(c *gin.Context) {
 		return
 	}
 
-	if err := pdf.Update(c.Param("id"), params.Title, params.Description); err != nil {
+	userRole, _ := c.Get(apiutil.CtxRole)
+	opt := pdf.UpdateOption{
+		Id:          c.Param("id"),
+		UserId:      c.GetString(apiutil.CtxUserId),
+		IsAdmin:     userRole == role.RoleAdmin,
+		Title:       params.Title,
+		Description: params.Description,
+	}
+
+	if err := pdf.Update(opt); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "pdf not found",
-			})
+			c.Status(http.StatusNotFound)
+		} else if errors.Is(err, pdf.ErrForbidden) {
+			c.Status(http.StatusForbidden)
 		} else {
 			logrus.Warn(err)
 			c.Status(http.StatusInternalServerError)
@@ -123,11 +142,17 @@ func (p PdfAPI) Update(c *gin.Context) {
 }
 
 func (p PdfAPI) Delete(c *gin.Context) {
-	if err := pdf.Delete(c.Param("id")); err != nil {
+	userRole, _ := c.Get(apiutil.CtxRole)
+	opt := pdf.DeleteOption{
+		Id:      c.Param("id"),
+		UserId:  c.GetString(apiutil.CtxUserId),
+		IsAdmin: userRole == role.RoleAdmin,
+	}
+	if err := pdf.Delete(opt); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "pdf not found",
-			})
+			c.Status(http.StatusNotFound)
+		} else if errors.Is(err, pdf.ErrForbidden) {
+			c.Status(http.StatusForbidden)
 		} else {
 			logrus.Warn(err)
 			c.Status(http.StatusInternalServerError)

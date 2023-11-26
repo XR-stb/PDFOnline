@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/pkg/user"
 	"flag"
 	"fmt"
 
@@ -32,6 +33,10 @@ func main() {
 
 	if err := database.Init(); err != nil {
 		logrus.Fatalf("init database error: %v", err)
+	}
+
+	if err := user.CreateAdminUser(); err != nil {
+		logrus.Fatalf("init admin user error: %v", err)
 	}
 
 	if err := static.Init(); err != nil {

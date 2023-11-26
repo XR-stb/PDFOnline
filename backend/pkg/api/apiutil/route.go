@@ -1,16 +1,20 @@
 package apiutil
 
-import "github.com/gin-gonic/gin"
+import (
+	"backend/pkg/user/role"
+	"github.com/gin-gonic/gin"
+)
 
 type APIRoutes interface {
 	Routes() []Route
 }
 
 type Route struct {
-	Method  string
-	Pattern string
-	Hooks   gin.HandlersChain
-	Handler gin.HandlerFunc
+	Method    string
+	Pattern   string
+	AuthLevel role.Role
+	Hooks     gin.HandlersChain
+	Handler   gin.HandlerFunc
 }
 
 func AddRoutes(r *gin.Engine, api APIRoutes) {

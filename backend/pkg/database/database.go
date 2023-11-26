@@ -20,7 +20,7 @@ func Init() error {
 		Logger: logger.New(logrus.StandardLogger(), logger.Config{
 			SlowThreshold:             200 * time.Millisecond,
 			LogLevel:                  logger.Warn,
-			IgnoreRecordNotFoundError: false,
+			IgnoreRecordNotFoundError: true,
 			Colorful:                  false,
 		}),
 	})

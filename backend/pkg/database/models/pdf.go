@@ -6,6 +6,7 @@ import (
 
 type PDF struct {
 	Id          string    `json:"id" gorm:"column:id;type:char(36);primaryKey"`
+	Author      string    `json:"author" gorm:"column:author;type:char(36);not null"`
 	Title       string    `json:"title" gorm:"column:title;type:varchar(150);not null"`
 	Description string    `json:"description" gorm:"column:description;type:varchar(150);not null"`
 	Url         string    `json:"url" gorm:"column:url;type:varchar(150);not null"`
@@ -15,15 +16,4 @@ type PDF struct {
 
 func (PDF) TableName() string {
 	return "pdfs"
-}
-
-type User struct {
-	Id       string `json:"id" gorm:"column:id;type:char(36);primaryKey"`
-	Username string `json:"username" gorm:"column:username;type:varchar(36);unique;not null"`
-	Password string `json:"-" gorm:"column:password;type:varchar(36);not null"`
-	Role     string `json:"role" gorm:"column:role;type:varchar(36);not null"`
-}
-
-func (User) TableName() string {
-	return "users"
 }

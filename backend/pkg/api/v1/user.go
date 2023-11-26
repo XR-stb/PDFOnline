@@ -9,7 +9,10 @@ import (
 	"gorm.io/gorm"
 
 	"backend/pkg/api/apiutil"
+	"backend/pkg/api/apiutil/jwt"
+	"backend/pkg/api/hooks"
 	"backend/pkg/user"
+	"backend/pkg/user/role"
 )
 
 type UserAPI struct{}
@@ -27,19 +30,36 @@ func (u UserAPI) Routes() []apiutil.Route {
 			Handler: u.Login,
 		},
 		{
+			Method:  http.MethodPost,
+			Pattern: "/v1/users/logout",
+			Handler: u.Logout,
+		},
+		{
 			Method:  http.MethodGet,
 			Pattern: "/v1/users/:user_id",
-			Handler: u.Get,
+			Handler: u.Show,
+		},
+		{
+			Method:  http.MethodPatch,
+			Pattern: "/v1/users/:user_id",
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleUser)},
+			Handler: u.Update,
+		},
+		{
+			Method:  http.MethodPatch,
+			Pattern: "/v1/users/:user_id/role",
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleAdmin)},
+			Handler: u.UpdateRole,
 		},
 	}
 }
 
 type UserRegisterOrLoginReq struct {
-	Username string `json:"username" binding:"required,min=6,max=36" required:"username is required" min:"username is too short, min 6 chars" max:"username is too long, max 36 chars"`
-	Password string `json:"password" binding:"required,min=6,max=36" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 36 chars"`
+	Username string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
+	Password string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
 }
 
-func (u UserAPI) Register(c *gin.Context) {
+func (UserAPI) Register(c *gin.Context) {
 	var req UserRegisterOrLoginReq
 	if err := apiutil.ShouldBind(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -48,7 +68,7 @@ func (u UserAPI) Register(c *gin.Context) {
 		return
 	}
 
-	userId, err := user.Create(req.Username, req.Password, user.RoleUser)
+	u, err := user.Create(req.Username, req.Password, role.RoleUser)
 	if err != nil {
 		if errors.Is(err, user.ErrUserAlreadyExist) {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -61,16 +81,19 @@ func (u UserAPI) Register(c *gin.Context) {
 		return
 	}
 
-	// TODO: generate token
-	token := ""
+	token := jwt.GenerateToken(&jwt.Claims{
+		UserId:   u.Id,
+		Username: u.Username,
+		Role:     u.Role,
+	})
+	c.SetCookie("token", token, 86400, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"user_id": userId,
-		"token":   token,
+		"user_id": u.Id,
 	})
 }
 
-func (u UserAPI) Login(c *gin.Context) {
+func (UserAPI) Login(c *gin.Context) {
 	var req UserRegisterOrLoginReq
 	if err := apiutil.ShouldBind(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -79,7 +102,7 @@ func (u UserAPI) Login(c *gin.Context) {
 		return
 	}
 
-	userId, err := user.Verify(req.Username, req.Password)
+	u, err := user.Verify(req.Username, req.Password)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -92,22 +115,28 @@ func (u UserAPI) Login(c *gin.Context) {
 		return
 	}
 
-	// TODO: generate token
-	token := ""
+	token := jwt.GenerateToken(&jwt.Claims{
+		UserId:   u.Id,
+		Username: u.Username,
+		Role:     u.Role,
+	})
+	c.SetCookie("token", token, 86400, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"user_id": userId,
-		"token":   token,
+		"user_id": u.Id,
 	})
 }
 
-func (u UserAPI) Get(c *gin.Context) {
-	user, err := user.Get(c.Param("user_id"))
+func (UserAPI) Logout(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", "", false, true)
+	c.Status(http.StatusOK)
+}
+
+func (UserAPI) Show(c *gin.Context) {
+	u, err := user.Get(c.Param("user_id"))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "user not found",
-			})
+			c.Status(http.StatusNotFound)
 		} else {
 			logrus.Warn(err)
 			c.Status(http.StatusInternalServerError)
@@ -116,6 +145,80 @@ func (u UserAPI) Get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"user": u,
 	})
+}
+
+type UpdateUserReq struct {
+	Username *string `json:"username" binding:"omitempty,min=5,max=32" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
+	Password *string `json:"password" binding:"omitempty,min=6,max=32" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
+}
+
+func (UserAPI) Update(c *gin.Context) {
+	var req UpdateUserReq
+	if err := apiutil.ShouldBind(c, &req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	userRole, _ := c.Get(apiutil.CtxRole)
+	opt := user.UpdateOption{
+		Id:       c.Param("user_id"),
+		UserId:   c.GetString(apiutil.CtxUserId),
+		IsAdmin:  userRole == role.RoleAdmin,
+		Username: req.Username,
+		Password: req.Password,
+	}
+
+	err := user.Update(&opt)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+		} else if errors.Is(err, user.ErrForbidden) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			logrus.Warn(err)
+			c.Status(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+type UpdateUserRoleReq struct {
+	Role *role.Role `json:"role" binding:"required,oneof=0 1 2" required:"role is required" oneof:"role is invalid"`
+}
+
+func (UserAPI) UpdateRole(c *gin.Context) {
+	var req UpdateUserRoleReq
+	if err := apiutil.ShouldBind(c, &req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	opt := user.UpdateOption{
+		Id:      c.Param("user_id"),
+		IsAdmin: true,
+		Role:    req.Role,
+	}
+
+	err := user.Update(&opt)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+		} else {
+			logrus.Warn(err)
+			c.Status(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

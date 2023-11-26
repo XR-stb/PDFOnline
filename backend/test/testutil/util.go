@@ -1,12 +1,14 @@
 package testutil
 
 import (
+	"backend/pkg/user/role"
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -15,14 +17,15 @@ import (
 	"backend/pkg/database"
 )
 
+func init() {
+	gin.SetMode(gin.TestMode)
+}
+
 func TestDB(t *testing.T) *gorm.DB {
-	dsn := "file:furion.db?mode=memory"
+	dsn := "file:pdfserver.db?mode=memory"
 	mockDB, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	require.NoError(t, err)
 	err = database.AutoMigrate(mockDB)
-	require.NoError(t, err)
-	// SQLite: enable foreign key check
-	err = mockDB.Exec("PRAGMA foreign_keys = ON").Error
 	require.NoError(t, err)
 	return mockDB
 }
@@ -40,4 +43,12 @@ func NewRequest(t *testing.T, method, url string, obj ...any) *http.Request {
 	req.Header.Set("Content-Type", "application/json")
 
 	return req
+}
+
+func StringPtr(s string) *string {
+	return &s
+}
+
+func RolePtr(r role.Role) *role.Role {
+	return &r
 }
