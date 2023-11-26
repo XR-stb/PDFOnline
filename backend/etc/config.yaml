@@ -1,0 +1,6 @@
+port: 8080
+debug: true
+# log_dir:
+
+static_dir: ./static
+dsn: root:123456@tcp(127.0.0.1:3306)/pdf_online?charset=utf8mb4&parseTime=True&loc=Local
