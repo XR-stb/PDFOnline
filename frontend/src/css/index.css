@@ -1,0 +1,44 @@
+/* styles.css */
+
+#app {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 60px;
+}
+
+header {
+    margin-bottom: 20px;
+}
+
+.pdf-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    /* 可以根据需要调整行和列之间的间隔 */
+    justify-content: center;
+}
+
+.pdf-block {
+    cursor: pointer;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+.pagination {
+    margin-top: 20px;
+}
+
+footer {
+    margin-top: 30px;
+}
+
+footer button {
+    margin-right: 10px;
+}
+
+img {
+    width: 100px;
+    height: 100px;
+}
