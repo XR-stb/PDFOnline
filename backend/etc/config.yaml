@@ -3,6 +3,6 @@ debug: true
 # log_dir:
 
 static_dir: ./static
-dsn: xxx:xxx@tcp(127.0.0.1:3306)/xxx?charset=utf8mb4&parseTime=True&loc=Local
+dsn: root:123456@tcp(127.0.0.1:3306)/pdf_online?charset=utf8mb4&parseTime=True&loc=Local
 admin_user: admin
 admin_password: admin123
