@@ -42,11 +42,17 @@ func (u UserAPI) Routes() []apiutil.Route {
 		{
 			Method:  http.MethodPatch,
 			Pattern: "/v1/users/:user_id",
-			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleUser)},
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleUser), hooks.UserAuth()},
 			Handler: u.Update,
 		},
 		{
-			Method:  http.MethodPatch,
+			Method:  http.MethodPut,
+			Pattern: "/v1/users/:user_id/password",
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleUser), hooks.UserAuth()},
+			Handler: u.UpdatePassword,
+		},
+		{
+			Method:  http.MethodPut,
 			Pattern: "/v1/users/:user_id/role",
 			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleAdmin)},
 			Handler: u.UpdateRole,
@@ -68,7 +74,7 @@ func (UserAPI) Register(c *gin.Context) {
 		return
 	}
 
-	u, err := user.Create(req.Username, req.Password, role.RoleUser)
+	u, err := user.Create(req.Username, req.Password, "", role.RoleUser)
 	if err != nil {
 		if errors.Is(err, user.ErrUserAlreadyExist) {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -82,14 +88,14 @@ func (UserAPI) Register(c *gin.Context) {
 	}
 
 	token := jwt.GenerateToken(&jwt.Claims{
-		UserId:   u.Id,
-		Username: u.Username,
-		Role:     u.Role,
+		UserId:   u.Id(),
+		Username: u.Username(),
+		Role:     u.Role(),
 	})
 	c.SetCookie("token", token, 86400, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"user_id": u.Id,
+		"user_id": u.Id(),
 	})
 }
 
@@ -102,7 +108,7 @@ func (UserAPI) Login(c *gin.Context) {
 		return
 	}
 
-	u, err := user.Verify(req.Username, req.Password)
+	u, err := user.GetByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -115,15 +121,22 @@ func (UserAPI) Login(c *gin.Context) {
 		return
 	}
 
+	if !u.VerifyPassword(req.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "username or password is incorrect",
+		})
+		return
+	}
+
 	token := jwt.GenerateToken(&jwt.Claims{
-		UserId:   u.Id,
-		Username: u.Username,
-		Role:     u.Role,
+		UserId:   u.Id(),
+		Username: u.Username(),
+		Role:     u.Role(),
 	})
 	c.SetCookie("token", token, 86400, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"user_id": u.Id,
+		"user_id": u.Id(),
 	})
 }
 
@@ -133,7 +146,7 @@ func (UserAPI) Logout(c *gin.Context) {
 }
 
 func (UserAPI) Show(c *gin.Context) {
-	u, err := user.Get(c.Param("user_id"))
+	u, err := user.GetById(c.Param("user_id"))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.Status(http.StatusNotFound)
@@ -145,13 +158,12 @@ func (UserAPI) Show(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": u,
+		"user": u.Show(),
 	})
 }
 
 type UpdateUserReq struct {
 	Username *string `json:"username" binding:"omitempty,min=5,max=32" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
-	Password *string `json:"password" binding:"omitempty,min=6,max=32" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
 }
 
 func (UserAPI) Update(c *gin.Context) {
@@ -163,27 +175,63 @@ func (UserAPI) Update(c *gin.Context) {
 		return
 	}
 
-	userRole, _ := c.Get(apiutil.CtxRole)
-	opt := user.UpdateOption{
-		Id:       c.Param("user_id"),
-		UserId:   c.GetString(apiutil.CtxUserId),
-		IsAdmin:  userRole == role.RoleAdmin,
-		Username: req.Username,
-		Password: req.Password,
-	}
-
-	err := user.Update(&opt)
+	u, err := user.GetById(c.Param("user_id"))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.Status(http.StatusNotFound)
-		} else if errors.Is(err, user.ErrForbidden) {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": err.Error(),
-			})
 		} else {
 			logrus.Warn(err)
 			c.Status(http.StatusInternalServerError)
 		}
+		return
+	}
+
+	err = u.Update(&user.UpdateOption{Username: req.Username})
+	if err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+type UpdateUserPasswordReq struct {
+	Password    string `json:"password"`
+	NewPassword string `json:"new_password" binding:"required,min=6,max=32" required:"new_password is required" min:"new_password is too short, min 6 chars" max:"new_password is too long, max 32 chars"`
+}
+
+func (UserAPI) UpdatePassword(c *gin.Context) {
+	var req UpdateUserPasswordReq
+	if err := apiutil.ShouldBind(c, &req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	u, err := user.GetById(c.Param("user_id"))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+		} else {
+			logrus.Warn(err)
+			c.Status(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if !u.VerifyPassword(req.Password) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "password is incorrect",
+		})
+		return
+	}
+
+	err = u.Update(&user.UpdateOption{Password: &req.NewPassword})
+	if err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -203,13 +251,7 @@ func (UserAPI) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	opt := user.UpdateOption{
-		Id:      c.Param("user_id"),
-		IsAdmin: true,
-		Role:    req.Role,
-	}
-
-	err := user.Update(&opt)
+	u, err := user.GetById(c.Param("user_id"))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.Status(http.StatusNotFound)
@@ -217,6 +259,13 @@ func (UserAPI) UpdateRole(c *gin.Context) {
 			logrus.Warn(err)
 			c.Status(http.StatusInternalServerError)
 		}
+		return
+	}
+
+	err = u.Update(&user.UpdateOption{Role: req.Role})
+	if err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 

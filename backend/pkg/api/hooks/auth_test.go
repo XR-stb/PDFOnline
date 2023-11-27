@@ -98,3 +98,37 @@ func TestAuth(t *testing.T) {
 		})
 	})
 }
+
+func TestUserAuth(t *testing.T) {
+	auth := UserAuth()
+
+	t.Run("admin", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users")
+		c.AddParam("user_id", "testUser")
+		c.Set(apiutil.CtxRole, role.RoleAdmin)
+		auth(c)
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("oneself", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users")
+		c.AddParam("user_id", "testUser")
+		c.Set(apiutil.CtxUserId, "testUser")
+		auth(c)
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("other user", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users")
+		c.AddParam("user_id", "testUser")
+		c.Set(apiutil.CtxUserId, "otherUser")
+		auth(c)
+		assert.Equal(t, http.StatusForbidden, rec.Code)
+	})
+}

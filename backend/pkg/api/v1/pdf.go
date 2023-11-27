@@ -12,7 +12,6 @@ import (
 	"backend/pkg/api/apiutil"
 	"backend/pkg/api/hooks"
 	"backend/pkg/pdf"
-	"backend/pkg/user"
 	"backend/pkg/user/role"
 )
 
@@ -76,11 +75,7 @@ func (p PdfAPI) Upload(c *gin.Context) {
 		return
 	}
 
-	userId := c.GetString(apiutil.CtxUserId)
-	if userId == "" || userId == user.GuestUser.Id {
-		userId = user.AdminUser.Id
-	}
-	if err := pdf.Create(userId, c.Request.Host, params.Title, params.Description, f); err != nil {
+	if err := pdf.Create(c.GetString(apiutil.CtxUserId), c.Request.Host, params.Title, params.Description, f); err != nil {
 		logrus.Warn(err)
 		c.Status(http.StatusInternalServerError)
 		return

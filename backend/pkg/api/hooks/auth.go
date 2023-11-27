@@ -35,3 +35,13 @@ func Auth(minRole role.Role) gin.HandlerFunc {
 		c.Set(apiutil.CtxRole, claims.Role)
 	}
 }
+
+func UserAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole, _ := c.Get(apiutil.CtxRole)
+		if c.GetString(apiutil.CtxUserId) != c.Param("user_id") && userRole != role.RoleAdmin {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+	}
+}

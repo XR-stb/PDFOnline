@@ -19,166 +19,131 @@ func TestCreate(t *testing.T) {
 	database.Use(testutil.TestDB(t))
 
 	t.Run("success", func(t *testing.T) {
-		user, err := Create("test_user", "123456", role.RoleUser)
+		user, err := Create("testUser", "123456", "email@example.com", role.RoleUser)
 		assert.NoError(t, err)
 
 		u := models.User{}
-		database.Instance().Where("id = ?", user.Id).Find(&u)
-		assert.Equal(t, "test_user", u.Username)
+		database.Instance().Where("id = ?", user.Id()).Find(&u)
+		assert.Equal(t, "testUser", u.Username)
 	})
 
 	t.Run("duplicate", func(t *testing.T) {
-		_, err := Create("test_user", "123456", role.RoleUser)
+		_, err := Create("testUser", "123456", "email@example.com", role.RoleUser)
 		assert.ErrorIs(t, err, ErrUserAlreadyExist)
 	})
 }
 
-func TestVerify(t *testing.T) {
+func TestGetById(t *testing.T) {
 	database.Use(testutil.TestDB(t))
-	expected := models.User{
+	testUser := models.User{
 		Id:       uuid.New().String(),
-		Username: "test_user",
-		Password: util.MD5("123456"),
+		Username: "testUser",
 		Role:     role.RoleUser,
 	}
-	database.Instance().Create(&expected)
+	database.Instance().Create(&testUser)
 
 	t.Run("success", func(t *testing.T) {
-		user, err := Verify("test_user", "123456")
+		u, err := GetById(testUser.Id)
 		assert.NoError(t, err)
-		assert.Equal(t, expected.Id, user.Id)
-	})
-
-	t.Run("wrong username", func(t *testing.T) {
-		_, err := Verify("test_user2", "123456")
-		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
-	})
-
-	t.Run("wrong password", func(t *testing.T) {
-		_, err := Verify("test_user", "1234567")
-		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
-	})
-
-	t.Run("guest", func(t *testing.T) {
-		user, err := Verify("guestUser", "guestUser")
-		assert.NoError(t, err)
-		assert.Equal(t, &GuestUser, user)
-	})
-}
-
-func TestGet(t *testing.T) {
-	database.Use(testutil.TestDB(t))
-	expected := models.User{
-		Id:       uuid.New().String(),
-		Username: "test_user",
-		Role:     role.RoleUser,
-	}
-	database.Instance().Create(&expected)
-
-	t.Run("success", func(t *testing.T) {
-		u, err := Get(expected.Id)
-		assert.NoError(t, err)
-		assert.EqualValues(t, expected, *u)
+		assert.EqualValues(t, testUser, u.Show())
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		_, err := Get("NOT_EXIST")
+		_, err := GetById("NOT_EXIST")
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 }
 
-func TestCreateAdminUser(t *testing.T) {
+func TestGetByUsername(t *testing.T) {
+	database.Use(testutil.TestDB(t))
+	testUser := models.User{
+		Id:       uuid.New().String(),
+		Username: "testUser",
+		Role:     role.RoleUser,
+	}
+	database.Instance().Create(&testUser)
+
+	t.Run("success", func(t *testing.T) {
+		u, err := GetByUsername(testUser.Username)
+		assert.NoError(t, err)
+		assert.EqualValues(t, testUser, u.Show())
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := GetByUsername("NOT_EXIST")
+		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	})
+}
+
+func TestCreateInternalUser(t *testing.T) {
 	database.Use(testutil.TestDB(t))
 	config.Cfg = &config.Config{
 		AdminUser:     "admin",
 		AdminPassword: "123456",
 	}
+	err := CreateInternalUser()
+	assert.NoError(t, err)
+
+	var adminUser models.User
+	err = database.Instance().First(&adminUser, "username = ?", "admin").Error
+	assert.NoError(t, err)
+	assert.Equal(t, "admin", adminUser.Username)
+	assert.Equal(t, role.RoleAdmin, adminUser.Role)
+
+	var guestUser models.User
+	err = database.Instance().First(&guestUser, "username = ?", "guest").Error
+	assert.NoError(t, err)
+	assert.Equal(t, "guest", guestUser.Username)
+	assert.Equal(t, role.RoleGuest, guestUser.Role)
+}
+
+func TestUser_VerifyPassword(t *testing.T) {
+	testUser := models.User{
+		Id:       uuid.New().String(),
+		Username: "testUser",
+		Password: util.MD5("123456"),
+		Role:     role.RoleUser,
+	}
+
+	u := User{
+		user: &testUser,
+	}
 
 	t.Run("success", func(t *testing.T) {
-		err := CreateAdminUser()
-		assert.NoError(t, err)
-
-		var user models.User
-		database.Instance().First(&user, "username = ?", "admin")
-		assert.Equal(t, "admin", user.Username)
-		assert.Equal(t, role.RoleAdmin, user.Role)
+		ok := u.VerifyPassword("123456")
+		assert.True(t, ok)
 	})
 
-	t.Run("already exist", func(t *testing.T) {
-		err := CreateAdminUser()
-		assert.NoError(t, err)
-
-		err = CreateAdminUser()
-		assert.NoError(t, err)
-	})
-
-	t.Run("exist but not admin", func(t *testing.T) {
-		config.Cfg.AdminUser = "adminUser"
-		database.Instance().Create(&models.User{
-			Id:       uuid.New().String(),
-			Username: "adminUser",
-			Password: "123456",
-			Role:     role.RoleUser,
-		})
-
-		err := CreateAdminUser()
-		assert.Equal(t, "admin user exist, but its role is not admin", err.Error())
+	t.Run("wrong password", func(t *testing.T) {
+		ok := u.VerifyPassword("1234567")
+		assert.False(t, ok)
 	})
 }
 
-func TestUpdate(t *testing.T) {
-	user := models.User{
-		Id:   uuid.New().String(),
-		Role: role.RoleUser,
-	}
+func TestUser_Update(t *testing.T) {
 	database.Use(testutil.TestDB(t))
 	db := database.Instance()
-	db.Create(&user)
+	testUser := models.User{
+		Id:       uuid.New().String(),
+		Username: "testUser",
+		Password: util.MD5("123456"),
+		Role:     role.RoleUser,
+	}
+	db.Create(&testUser)
 
-	t.Run("forbidden", func(t *testing.T) {
-		err := Update(&UpdateOption{
-			Id:       user.Id,
-			UserId:   "FORBIDDEN",
-			Username: testutil.StringPtr("test_user"),
-		})
-		assert.Equal(t, ErrForbidden, err)
-	})
+	u := User{
+		user: &testUser,
+		db:   db,
+	}
 
 	t.Run("success", func(t *testing.T) {
-		t.Run("oneself", func(t *testing.T) {
-			err := Update(&UpdateOption{
-				Id:       user.Id,
-				UserId:   user.Id,
-				Username: testutil.StringPtr("testUser"),
-			})
-			assert.NoError(t, err)
-
-			var u models.User
-			db.First(&u, "id = ?", user.Id)
-			assert.Equal(t, "testUser", u.Username)
-		})
-
-		t.Run("admin", func(t *testing.T) {
-			err := Update(&UpdateOption{
-				Id:       user.Id,
-				UserId:   user.Id,
-				IsAdmin:  true,
-				Username: testutil.StringPtr("testUser2"),
-			})
-			assert.NoError(t, err)
-
-			var u models.User
-			db.First(&u, "id = ?", user.Id)
-			assert.Equal(t, "testUser2", u.Username)
-		})
-	})
-
-	t.Run("not found", func(t *testing.T) {
-		err := Update(&UpdateOption{
-			Id:       "NOT_EXIST",
-			UserId:   "NOT_EXIST",
+		err := u.Update(&UpdateOption{
 			Username: testutil.StringPtr("testUser"),
 		})
-		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.NoError(t, err)
+
+		var u models.User
+		db.First(&u, "id = ?", testUser.Id)
+		assert.Equal(t, "testUser", u.Username)
 	})
 }
