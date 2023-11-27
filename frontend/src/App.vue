@@ -8,9 +8,9 @@
         <!-- PDF列表 -->
         <div class="pdf-container">
             <div v-for="pdf in pdfList" :key="pdf.title" class="pdf-block" @click="openPDF(pdf.url)">
-                <img :src="pdf.cover_url" alt="加载封面失败">
-                <h3>{{ pdf.title }}</h3>
-                <p>{{ pdf.description }}</p>
+                <img :src="pdf.cover_url" alt="加载封面失败" class="cover">
+                <p class="title">{{ pdf.title }}</p>
+                <p class="desc">{{ pdf.description }}</p>
             </div>
         </div>
 
