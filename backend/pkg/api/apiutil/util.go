@@ -4,6 +4,9 @@ import (
 	"errors"
 	"reflect"
 
+	"backend/pkg/api/apiutil/jwt"
+	"backend/pkg/user/role"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -45,4 +48,13 @@ func ShouldBind(c *gin.Context, obj interface{}) error {
 	}
 
 	return ret
+}
+
+func SetTokenCookie(c *gin.Context, UserId, Username string, Role role.Role) {
+	token := jwt.GenerateToken(&jwt.Claims{
+		UserId:   UserId,
+		Username: Username,
+		Role:     Role,
+	})
+	c.SetCookie("token", token, 0, "/", "", false, true)
 }

@@ -35,8 +35,8 @@ func main() {
 		logrus.Fatalf("init database error: %v", err)
 	}
 
-	if err := user.CreateAdminUser(); err != nil {
-		logrus.Fatalf("init admin user error: %v", err)
+	if err := user.CreateInternalUser(); err != nil {
+		logrus.Fatalf("create internal user error: %v", err)
 	}
 
 	if err := static.Init(); err != nil {

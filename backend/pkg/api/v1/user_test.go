@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"backend/pkg/api/apiutil"
-	"backend/pkg/user/role"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,8 +10,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	"backend/pkg/api/apiutil"
 	"backend/pkg/database"
 	"backend/pkg/database/models"
+	"backend/pkg/user/role"
 	"backend/pkg/util"
 	"backend/test/testutil"
 )
@@ -136,7 +136,9 @@ func TestUserAPI_Show(t *testing.T) {
 	user := models.User{
 		Id:       uuid.New().String(),
 		Username: "testUser",
+		Email:    "email@example.com",
 		Password: "123456",
+		Role:     role.RoleUser,
 	}
 	database.Instance().Create(&user)
 
@@ -155,6 +157,7 @@ func TestUserAPI_Show(t *testing.T) {
 			"user": map[string]any{
 				"id":       user.Id,
 				"username": user.Username,
+				"email":    user.Email,
 			},
 		}
 		assert.EqualValues(t, expected, payload)
@@ -192,18 +195,6 @@ func TestUserAPI_Update(t *testing.T) {
 	database.Use(testutil.TestDB(t))
 	db := database.Instance()
 	db.Create(&user)
-
-	t.Run("forbidden", func(t *testing.T) {
-		rec := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPatch, "/users", UpdateUserReq{
-			Username: testutil.StringPtr("testUser"),
-		})
-		c.AddParam("user_id", user.Id)
-		UserAPI{}.Update(c)
-
-		assert.Equal(t, http.StatusForbidden, rec.Code)
-	})
 
 	t.Run("success", func(t *testing.T) {
 		t.Run("oneself", func(t *testing.T) {

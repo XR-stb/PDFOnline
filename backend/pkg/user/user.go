@@ -18,124 +18,149 @@ import (
 
 var (
 	ErrUserAlreadyExist = errors.New("username already exist")
-	ErrForbidden        = errors.New("forbidden")
 )
 
-var (
-	GuestUser = models.User{
-		Id:       "guest",
-		Username: "guestUser",
-		Password: "guestUser",
-		Role:     role.RoleGuest,
-	}
-	AdminUser models.User
-)
+type User struct {
+	user *models.User
+	db   *gorm.DB
+}
 
-func Create(username, password string, role role.Role) (*models.User, error) {
-	u := models.User{
+func Create(username, password, email string, role role.Role) (*User, error) {
+	db := database.Instance()
+	user := models.User{
 		Id:       uuid.New().String(),
 		Username: username,
 		Password: util.MD5(password),
+		Email:    email,
 		Role:     role,
 	}
 
-	if err := database.Instance().Create(&u).Error; err != nil {
+	if err := db.Create(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) || strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrUserAlreadyExist
 		}
 		return nil, err
 	}
 
-	return &u, nil
+	return &User{
+		user: &user,
+		db:   db,
+	}, nil
 }
 
-func Get(id string) (*models.User, error) {
-	u := &models.User{}
-	err := database.Instance().First(u, "id = ?", id).Error
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}
-
-func Verify(username, password string) (*models.User, error) {
-	if username == GuestUser.Username && password == GuestUser.Password {
-		return &GuestUser, nil
-	}
-
-	u := &models.User{}
-	err := database.Instance().First(u, "username = ? AND password = ?", username, util.MD5(password)).Error
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}
-
-func CreateAdminUser() error {
+func GetById(id string) (*User, error) {
 	db := database.Instance()
+	user := models.User{}
+	return &User{
+		user: &user,
+		db:   db,
+	}, db.First(&user, "id = ?", id).Error
+}
 
-	var user models.User
-	if err := db.First(&user, "username = ?", config.AdminUser()).Error; err != nil {
+func GetByUsername(username string) (*User, error) {
+	db := database.Instance()
+	user := models.User{}
+	return &User{
+		user: &user,
+		db:   db,
+	}, db.First(&user, "username = ?", username).Error
+}
+
+func CreateInternalUser() error {
+	if err := createAdminUser(); err != nil {
+		return err
+	}
+
+	return createGuestUser()
+}
+
+func createAdminUser() error {
+	var u *User
+	var err error
+	if u, err = GetByUsername(config.AdminUser()); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			user = models.User{
-				Id:       uuid.New().String(),
-				Username: config.AdminUser(),
-				Password: util.MD5(config.AdminPassword()),
-				Role:     role.RoleAdmin,
-			}
-			if err := db.Create(&user).Error; err != nil {
+			if u, err = Create(config.AdminUser(), config.AdminPassword(), "", role.RoleAdmin); err != nil {
 				return fmt.Errorf("failed to create admin user: %v", err)
 			}
-			logrus.Infof("\u001B[31madmin user: %s, password: %s, it will not be shown again, please keep it\u001B[0m", config.AdminUser(), config.AdminPassword())
+			logrus.Infof("\u001B[31mAdmin user created. username: %s, password: %s. It will not be shown again, please keep it\u001B[0m", config.AdminUser(), config.AdminPassword())
 		} else {
 			return fmt.Errorf("failed to query admin user: %v", err)
 		}
 	}
 
-	if user.Role != role.RoleAdmin {
+	if u.user.Role != role.RoleAdmin {
 		return fmt.Errorf("admin user exist, but its role is not admin")
 	}
-
-	AdminUser = user
 
 	return nil
 }
 
+func createGuestUser() error {
+	var u *User
+	var err error
+	if u, err = GetByUsername("guest"); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if u, err = Create("guest", "guest123", "", role.RoleGuest); err != nil {
+				return fmt.Errorf("failed to create guest user: %v", err)
+			}
+		} else {
+			return fmt.Errorf("failed to query guest user: %v", err)
+		}
+	}
+
+	if u.user.Role != role.RoleGuest {
+		return fmt.Errorf("guest user exist, but its role is not guest")
+	}
+
+	return nil
+}
+
+func (u *User) Show() models.User {
+	return *u.user
+}
+
+func (u *User) Id() string {
+	return u.user.Id
+}
+
+func (u *User) Username() string {
+	return u.user.Username
+}
+
+func (u *User) Role() role.Role {
+	return u.user.Role
+}
+
+func (u *User) Email() string {
+	return u.user.Email
+}
+
+func (u *User) VerifyPassword(password string) bool {
+	return u.user.Password == util.MD5(password)
+}
+
 type UpdateOption struct {
-	Id       string
-	UserId   string
-	IsAdmin  bool
 	Username *string
 	Password *string
 	Role     *role.Role
 }
 
-func Update(opt *UpdateOption) error {
-	db := database.Instance()
-
-	var user models.User
-	if err := db.First(&user, "id = ?", opt.Id).Error; err != nil {
-		return err
-	}
-
-	if !opt.IsAdmin && user.Id != opt.UserId {
-		return ErrForbidden
-	}
-
+func (u *User) Update(opt *UpdateOption) error {
 	if opt.Username != nil {
-		user.Username = *opt.Username
+		u.user.Username = *opt.Username
 	}
+
 	if opt.Password != nil {
-		user.Password = util.MD5(*opt.Password)
+		u.user.Password = util.MD5(*opt.Password)
 	}
 
 	if opt.Role != nil {
-		user.Role = *opt.Role
+		u.user.Role = *opt.Role
 	}
 
-	if err := db.Save(&user).Error; err != nil {
-		return err
-	}
+	return u.save()
+}
 
-	return nil
+func (u *User) save() error {
+	return u.db.Save(u.user).Error
 }
