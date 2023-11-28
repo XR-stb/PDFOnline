@@ -5,17 +5,31 @@
             <h1>PDF Online</h1>
         </header>
 
-        <!-- PDF列表 -->
-        <div class="pdf-container">
-            <div v-for="pdf in pdfList" :key="pdf.title" class="pdf-block" @click="openPDF(pdf.url)">
-                <img :src="pdf.cover_url" alt="加载封面失败" class="cover">
-                <p class="title">{{ pdf.title }}</p>
-                <p class="desc">{{ pdf.description }}</p>
+        <div class="maintainer">
+            <div class="left">
+                <div class="theme">主题</div>
+                <div class="login">登录</div>
+                <div class="upload">上传</div>
+                <div class="home">首页</div>
+            </div>
+            <div class="right">
+                <!-- PDF列表 -->
+                <div class="pdf-container">
+                    <div v-for="pdf in pdfList" :key="pdf.title" class="pdf-block" @click="openPDF(pdf.url)">
+                        <!-- <img :src="pdf.cover_url" alt="加载封面失败" class="cover"> -->
+                        <el-image
+                            style="width: 100px; height: 100px"
+                            :src="pdf.cover_url"
+                            :fit="fit"></el-image>
+                        <p class="title">{{ pdf.title }}</p>
+                        <p class="desc">{{ pdf.description }}</p>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- 分页控制 -->
-        <div class="pagination">
+        <!-- <div class="pagination">
             <button @click="prevPage" :disabled="currentPage === 1">
                 上一页
             </button>
@@ -23,16 +37,16 @@
             <button @click="nextPage" :disabled="currentPage === totalPages">
                 下一页
             </button>
-        </div>
+        </div> -->
 
         <!-- 底部功能按钮 -->
-        <footer>
+        <!-- <footer>
             <button @click="showMore">更多</button>
             <button @click="login">登录</button>
             <button @click="goHome">首页</button>
             <button @click="toggleBackgroundMode">背景模式</button>
             <button @click="upload">上传</button>
-        </footer>
+        </footer> -->
     </div>
 </template>
   
