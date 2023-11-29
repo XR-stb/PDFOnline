@@ -239,7 +239,7 @@ func (UserAPI) UpdatePassword(c *gin.Context) {
 }
 
 type UpdateUserRoleReq struct {
-	Role *role.Role `json:"role" binding:"required,oneof=0 1 2" required:"role is required" oneof:"role is invalid"`
+	Role *role.Role `json:"role" binding:"required,oneof=1 2" required:"role is required" oneof:"role is invalid"`
 }
 
 func (UserAPI) UpdateRole(c *gin.Context) {

@@ -285,4 +285,21 @@ func TestUserAPI_UpdateRole(t *testing.T) {
 		c.Writer.WriteHeaderNow()
 		assert.Equal(t, http.StatusNotFound, rec.Code)
 	})
+
+	t.Run("invalid role", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPatch, "/users/role", UpdateUserRoleReq{
+			Role: testutil.RolePtr(role.Role(3)),
+		})
+		c.AddParam("user_id", user.Id)
+		UserAPI{}.UpdateRole(c)
+
+		c.Writer.WriteHeaderNow()
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		payload := map[string]any{}
+		err := json.NewDecoder(rec.Body).Decode(&payload)
+		assert.NoError(t, err)
+		assert.Equal(t, "role is invalid", payload["error"])
+	})
 }
