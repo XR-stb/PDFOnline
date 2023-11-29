@@ -12,8 +12,7 @@ import (
 
 func Test_Init(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		config.Cfg = &config.Config{}
-		config.Cfg.StaticDir = t.TempDir()
+		config.Cfg = &config.Config{Default: config.Default{StaticDir: t.TempDir()}}
 
 		err := Init()
 		assert.NoError(t, err)
@@ -35,8 +34,7 @@ func TestUploadPdf(t *testing.T) {
 
 func TestDeletePdf(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		config.Cfg = &config.Config{}
-		config.Cfg.StaticDir = t.TempDir()
+		config.Cfg = &config.Config{Default: config.Default{StaticDir: t.TempDir()}}
 
 		f, err := os.Create(filepath.Join(config.StaticDir(), "test.pdf"))
 		assert.NoError(t, err)
@@ -52,8 +50,7 @@ func TestDeletePdf(t *testing.T) {
 	})
 
 	t.Run("file not found", func(t *testing.T) {
-		config.Cfg = &config.Config{}
-		config.Cfg.StaticDir = t.TempDir()
+		config.Cfg = &config.Config{Default: config.Default{StaticDir: t.TempDir()}}
 
 		err := Init()
 		assert.NoError(t, err)

@@ -13,7 +13,7 @@ import (
 func TestInit(t *testing.T) {
 	t.Run("set output", func(t *testing.T) {
 		dir := t.TempDir()
-		config.Cfg = &config.Config{Debug: true, LogDir: dir}
+		config.Cfg = &config.Config{Default: config.Default{Debug: true, LogDir: dir}}
 
 		err := Init()
 		assert.NoError(t, err)

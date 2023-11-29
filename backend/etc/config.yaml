@@ -1,8 +1,13 @@
-port: 8080
-debug: true
-# log_dir:
-
-static_dir: ./static
-dsn: root:123456@tcp(127.0.0.1:3306)/pdf_online?charset=utf8mb4&parseTime=True&loc=Local
-admin_user: admin
-admin_password: admin123
+default:
+  port: 8080
+  debug: true
+  # log_dir:
+  static_dir: ./static
+  admin_username: admin
+  admin_password: admin123
+database:
+  host:
+  port:
+  user:
+  password:
+  db_name:
