@@ -77,12 +77,12 @@ func CreateInternalUser() error {
 func createAdminUser() error {
 	var u *User
 	var err error
-	if u, err = GetByUsername(config.AdminUser()); err != nil {
+	if u, err = GetByUsername(config.AdminUsername()); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if u, err = Create(config.AdminUser(), config.AdminPassword(), "", role.RoleAdmin); err != nil {
+			if u, err = Create(config.AdminUsername(), config.AdminPassword(), "", role.RoleAdmin); err != nil {
 				return fmt.Errorf("failed to create admin user: %v", err)
 			}
-			logrus.Infof("\u001B[31mAdmin user created. username: %s, password: %s. It will not be shown again, please keep it\u001B[0m", config.AdminUser(), config.AdminPassword())
+			logrus.Infof("\u001B[31mAdmin user created. username: %s, password: %s. It will not be shown again, please keep it\u001B[0m", config.AdminUsername(), config.AdminPassword())
 		} else {
 			return fmt.Errorf("failed to query admin user: %v", err)
 		}

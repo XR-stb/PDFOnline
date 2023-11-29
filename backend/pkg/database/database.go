@@ -1,21 +1,23 @@
 package database
 
 import (
-	"backend/pkg/config"
-	"backend/pkg/database/models"
 	"fmt"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"time"
+
+	"backend/pkg/config"
+	"backend/pkg/database/models"
 )
 
 var db *gorm.DB
 
 func Init() error {
 	var err error
-	db, err = gorm.Open(mysql.Open(config.Dsn()), &gorm.Config{
+	db, err = gorm.Open(mysql.Open(MakeDsn()), &gorm.Config{
 		TranslateError: true,
 		Logger: logger.New(logrus.StandardLogger(), logger.Config{
 			SlowThreshold:             200 * time.Millisecond,
@@ -33,6 +35,11 @@ func Init() error {
 	}
 
 	return nil
+}
+
+func MakeDsn() string {
+	dbConfig := config.DatabaseConfig()
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.DbName)
 }
 
 func AutoMigrate(db *gorm.DB) error {

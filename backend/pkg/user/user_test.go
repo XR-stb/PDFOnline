@@ -78,8 +78,10 @@ func TestGetByUsername(t *testing.T) {
 func TestCreateInternalUser(t *testing.T) {
 	database.Use(testutil.TestDB(t))
 	config.Cfg = &config.Config{
-		AdminUser:     "admin",
-		AdminPassword: "123456",
+		Default: config.Default{
+			AdminUsername: "admin",
+			AdminPassword: "123456",
+		},
 	}
 	err := CreateInternalUser()
 	assert.NoError(t, err)
