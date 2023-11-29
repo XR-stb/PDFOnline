@@ -50,7 +50,7 @@ type UploadPdfReq struct {
 	Description string `form:"description" binding:"required" required:"description is required"`
 }
 
-func (p PdfAPI) Upload(c *gin.Context) {
+func (PdfAPI) Upload(c *gin.Context) {
 	var params UploadPdfReq
 
 	if err := apiutil.ShouldBind(c, &params); err != nil {
@@ -75,7 +75,8 @@ func (p PdfAPI) Upload(c *gin.Context) {
 		return
 	}
 
-	if err := pdf.Create(c.GetString(apiutil.CtxUserId), c.Request.Host, params.Title, params.Description, f); err != nil {
+	_, err = pdf.Create(c.GetString(apiutil.CtxUserId), c.Request.Host, params.Title, params.Description, f)
+	if err != nil {
 		logrus.Warn(err)
 		c.Status(http.StatusInternalServerError)
 		return
@@ -84,7 +85,7 @@ func (p PdfAPI) Upload(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-func (p PdfAPI) List(c *gin.Context) {
+func (PdfAPI) List(c *gin.Context) {
 	pdfs, err := pdf.List()
 	if err != nil {
 		logrus.Warn(err)
@@ -102,7 +103,7 @@ type UpdatePdfReq struct {
 	Description *string `json:"description"`
 }
 
-func (p PdfAPI) Update(c *gin.Context) {
+func (PdfAPI) Update(c *gin.Context) {
 	var params UpdatePdfReq
 
 	if err := c.ShouldBindJSON(&params); err != nil {
@@ -112,20 +113,10 @@ func (p PdfAPI) Update(c *gin.Context) {
 		return
 	}
 
-	userRole, _ := c.Get(apiutil.CtxRole)
-	opt := pdf.UpdateOption{
-		Id:          c.Param("id"),
-		UserId:      c.GetString(apiutil.CtxUserId),
-		IsAdmin:     userRole == role.RoleAdmin,
-		Title:       params.Title,
-		Description: params.Description,
-	}
-
-	if err := pdf.Update(opt); err != nil {
+	p, err := pdf.GetById(c.Param("id"))
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.Status(http.StatusNotFound)
-		} else if errors.Is(err, pdf.ErrForbidden) {
-			c.Status(http.StatusForbidden)
 		} else {
 			logrus.Warn(err)
 			c.Status(http.StatusInternalServerError)
@@ -133,25 +124,47 @@ func (p PdfAPI) Update(c *gin.Context) {
 		return
 	}
 
+	userRole, _ := c.Get(apiutil.CtxRole)
+	if p.Author() != c.GetString(apiutil.CtxUserId) && userRole != role.RoleAdmin {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	opt := pdf.UpdateOption{
+		Title:       params.Title,
+		Description: params.Description,
+	}
+
+	if err := p.Update(&opt); err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
 	c.Status(http.StatusNoContent)
 }
 
-func (p PdfAPI) Delete(c *gin.Context) {
-	userRole, _ := c.Get(apiutil.CtxRole)
-	opt := pdf.DeleteOption{
-		Id:      c.Param("id"),
-		UserId:  c.GetString(apiutil.CtxUserId),
-		IsAdmin: userRole == role.RoleAdmin,
-	}
-	if err := pdf.Delete(opt); err != nil {
+func (PdfAPI) Delete(c *gin.Context) {
+	p, err := pdf.GetById(c.Param("id"))
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.Status(http.StatusNotFound)
-		} else if errors.Is(err, pdf.ErrForbidden) {
-			c.Status(http.StatusForbidden)
 		} else {
 			logrus.Warn(err)
 			c.Status(http.StatusInternalServerError)
 		}
+		return
+	}
+
+	userRole, _ := c.Get(apiutil.CtxRole)
+	if p.Author() != c.GetString(apiutil.CtxUserId) && userRole != role.RoleAdmin {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	if err := p.Delete(); err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 

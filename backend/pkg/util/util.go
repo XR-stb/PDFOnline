@@ -3,9 +3,8 @@ package util
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
-	"path/filepath"
-	"strings"
+	"errors"
+	"io"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
@@ -16,39 +15,35 @@ func MD5(s string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// 获取pdf的某一页并保存为图片
-// input_22_Image0.jpg
-// 其中input为pdf的文件名，22为页码，后面固定
-func extractPageAsImage(inputPath, outputDir string, pageNum int) error {
+// ExtractPageAsImage get a page of the pdf and save it as a picture
+func ExtractPageAsImage(inputPath string, w io.Writer, pageNum int) error {
 	// Create a context.
 	ctx, err := api.ReadContextFile(inputPath)
 	if err != nil {
-		fmt.Printf("TestExtractImagesLowLevel readContext: %v\n", err)
 		return err
 	}
 
 	// Optimize resource usage of this context.
 	if err := api.OptimizeContext(ctx); err != nil {
-		fmt.Printf("TestExtractImagesLowLevel optimizeContext: %v\n", err)
 		return err
 	}
 
 	// Extract images for page 1.
-	i := pageNum
-	ii, err := pdfcpu.ExtractPageImages(ctx, i, false)
+	images, err := pdfcpu.ExtractPageImages(ctx, pageNum, false)
 	if err != nil {
-		fmt.Printf("TestExtractImagesLowLeveloptimizeContext extractPageFonts(%d): %v\n", i, err)
+		return err
 	}
 
-	baseFileName := strings.TrimSuffix(filepath.Base(inputPath), ".pdf")
+	if len(images) != 1 {
+		return errors.New("unexpected number of images")
+	}
 
-	// Process extracted images.
-	for _, img := range ii {
-		fn := filepath.Join(outputDir, fmt.Sprintf("%s_%d_%s.%s", baseFileName, i, img.Name, img.FileType))
-		if err := pdfcpu.WriteReader(fn, img); err != nil {
-			fmt.Printf("write: %s", fn)
+	// Write images to disk.
+	for _, img := range images {
+		if _, err = io.Copy(w, img); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
