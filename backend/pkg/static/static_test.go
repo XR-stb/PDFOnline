@@ -43,7 +43,7 @@ func TestDeletePdf(t *testing.T) {
 		err = Init()
 		assert.NoError(t, err)
 
-		err = DeletePdf("test.pdf")
+		err = RemovePdfFile("test.pdf")
 		assert.Error(t, err)
 
 		assert.NoFileExists(t, filepath.Join(PdfDir, "test.pdf"))
@@ -55,7 +55,7 @@ func TestDeletePdf(t *testing.T) {
 		err := Init()
 		assert.NoError(t, err)
 
-		err = DeletePdf("test.pdf")
+		err = RemovePdfFile("test.pdf")
 		assert.Error(t, err)
 	})
 }

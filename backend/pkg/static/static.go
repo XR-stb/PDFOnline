@@ -2,8 +2,6 @@ package static
 
 import (
 	"fmt"
-	"io"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 
@@ -51,47 +49,4 @@ func createDirIfNotExist(dir string) error {
 	}
 
 	return nil
-}
-
-func UploadPdf(filename string, file *multipart.FileHeader) error {
-	path := filepath.Join(PdfDir, filename)
-
-	f, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	targetFile, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("create file error: %v", err)
-	}
-	defer f.Close()
-
-	_, err = io.Copy(targetFile, f)
-
-	return err
-}
-
-func UploadCover(filename string, file []byte) (string, error) {
-	path := filepath.Join(CoverDir, filename)
-	f, err := os.Create(path)
-	if err != nil {
-		return "", fmt.Errorf("create file error: %v", err)
-	}
-	defer f.Close()
-
-	_, err = f.Write(file)
-
-	return path, err
-}
-
-func DeletePdf(filename string) error {
-	path := filepath.Join(PdfDir, filename)
-	return os.Remove(path)
-}
-
-func DeleteCover(filename string) error {
-	path := filepath.Join(CoverDir, filename)
-	return os.Remove(path)
 }

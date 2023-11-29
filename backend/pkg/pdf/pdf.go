@@ -3,6 +3,7 @@ package pdf
 import (
 	"errors"
 	"fmt"
+	"gorm.io/gorm"
 	"mime/multipart"
 
 	"github.com/google/uuid"
@@ -18,7 +19,12 @@ var (
 	ErrForbidden = errors.New("forbidden")
 )
 
-func Create(author, host, title, description string, f *multipart.FileHeader) error {
+type PDF struct {
+	pdf *models.PDF
+	db  *gorm.DB
+}
+
+func Create(author, host, title, description string, f *multipart.FileHeader) (*PDF, error) {
 	pdf := models.PDF{
 		Id:          uuid.New().String(),
 		Author:      author,
@@ -26,20 +32,30 @@ func Create(author, host, title, description string, f *multipart.FileHeader) er
 		Description: description,
 	}
 
-	err := static.UploadPdf(pdfFileName(pdf.Id), f)
+	pdfFilename, err := static.SavePdfFile(pdf.Id, f)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	pdf.Url = pdfUrl(host, pdf.Id)
+	pdf.Url = url(host, apiutil.StaticRootPdf, pdfFilename)
 
-	// TODO: generate cover and save
-
-	if err := database.Instance().Create(&pdf).Error; err != nil {
-		return err
+	coverFilename, err := static.SaveCoverFile(pdf.Id)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	pdf.CoverUrl = url(host, apiutil.StaticRootCover, coverFilename)
+
+	db := database.Instance()
+
+	if err := db.Create(&pdf).Error; err != nil {
+		return nil, err
+	}
+
+	return &PDF{
+		pdf: &pdf,
+		db:  db,
+	}, nil
 }
 
 func List() ([]*models.PDF, error) {
@@ -52,64 +68,60 @@ func List() ([]*models.PDF, error) {
 	return pdfs, nil
 }
 
+func GetById(id string) (*PDF, error) {
+	db := database.Instance()
+	pdf := models.PDF{}
+
+	return &PDF{
+		pdf: &pdf,
+		db:  db,
+	}, db.First(&pdf, "id = ?", id).Error
+}
+
+func (p *PDF) Id() string {
+	return p.pdf.Id
+}
+
+func (p *PDF) Author() string {
+	return p.pdf.Author
+}
+
+func (p *PDF) Save() error {
+	return p.db.Save(p.pdf).Error
+}
+
 type UpdateOption struct {
-	Id          string
-	UserId      string
-	IsAdmin     bool
 	Title       *string
 	Description *string
 }
 
-func Update(opt UpdateOption) error {
-	pdf := models.PDF{}
-	db := database.Instance()
-	if err := db.First(&pdf, "id = ?", opt.Id).Error; err != nil {
-		return err
-	}
-
-	if !opt.IsAdmin && pdf.Author != opt.UserId {
-		return ErrForbidden
-	}
-
+func (p *PDF) Update(opt *UpdateOption) error {
 	if opt.Title != nil {
-		pdf.Title = *opt.Title
+		p.pdf.Title = *opt.Title
 	}
 
 	if opt.Description != nil {
-		pdf.Description = *opt.Description
+		p.pdf.Description = *opt.Description
 	}
 
-	if err := db.Save(&pdf).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return p.Save()
 }
 
-type DeleteOption struct {
-	Id      string
-	UserId  string
-	IsAdmin bool
-}
-
-func Delete(opt DeleteOption) error {
-	pdf := models.PDF{}
-	db := database.Instance()
-	if err := db.First(&pdf, "id = ?", opt.Id).Error; err != nil {
-		return err
-	}
-
-	if !opt.IsAdmin && pdf.Author != opt.UserId {
-		return ErrForbidden
-	}
-
-	if err := db.Delete(&pdf).Error; err != nil {
+func (p *PDF) Delete() error {
+	if err := p.db.Delete(&p.pdf).Error; err != nil {
 		return err
 	}
 
 	// async delete pdf file
 	go func() {
-		if err := static.DeletePdf(pdfFileName(opt.Id)); err != nil {
+		if err := static.RemovePdfFile(p.Id()); err != nil {
+			logrus.Error(err)
+		}
+	}()
+
+	// async delete cover file
+	go func() {
+		if err := static.RemoveCoverFile(p.Id()); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -117,10 +129,6 @@ func Delete(opt DeleteOption) error {
 	return nil
 }
 
-func pdfFileName(id string) string {
-	return fmt.Sprintf("%s.pdf", id)
-}
-
-func pdfUrl(host, id string) string {
-	return fmt.Sprintf("http://%s%s/%s", host, apiutil.StaticRootPdf, pdfFileName(id))
+func url(host, root, filename string) string {
+	return fmt.Sprintf("http://%s%s/%s", host, root, filename)
 }
