@@ -28,15 +28,18 @@ header {
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
     display: flex;
-    flex-wrap: wrap; /* 超出换行 */
-    justify-content: center; /* 将元素居中对齐 */
+    flex-wrap: wrap;
+    /* 超出换行 */
+    justify-content: center;
+    /* 将元素居中对齐 */
 }
 
 .pdf-block {
     width: 100px;
     height: 200px;
     /* border: 1px solid #ccc; */
-    margin: 5px; /* 减小元素之间的外边距 */
+    margin: 5px;
+    /* 减小元素之间的外边距 */
     margin-top: 50px;
     padding: 0 40px;
     display: flex;
@@ -67,10 +70,20 @@ footer button {
     align-items: flex-start;
     margin-top: 15px;
     margin-left: 4px;
-    color: rgb(65,191,216);
+    color: rgb(65, 191, 216);
 }
 
 .desc {
     position: relative;
     bottom: 30px;
+}
+
+.bt-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.mb-2 {
+    margin-bottom: 2em;
+    /* You can adjust the value based on your preference */
 }
