@@ -4,7 +4,7 @@
     font-family: Avenir, Helvetica, Arial, sans-serif;
     text-align: center;
     color: #2c3e50;
-    margin-top: 60px;
+    /* margin-top: 60px; */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -12,8 +12,15 @@
 
 header {
     position: relative;
-    top: -80px;
-    margin-bottom: 20px;
+    /* top: -80px; */
+    /* margin-bottom: 20px; */
+}
+
+h1 {
+    color: gray;
+    text-align: center;
+    font-size: 50px;
+    margin-bottom: -3px;
 }
 
 .maintainer {
@@ -36,15 +43,27 @@ header {
 
 .pdf-block {
     width: 100px;
-    height: 200px;
+    height: 240px;
     /* border: 1px solid #ccc; */
     margin: 5px;
     /* 减小元素之间的外边距 */
-    margin-top: 50px;
+    margin-top: 40px;
     padding: 0 40px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 5px #aaa;
+    padding-top: 10px;
+    transition: background-color 0.3s ease;
+    /* 添加过渡效果，使颜色变化平滑 */
+    position: relative;
+    border-radius: 3%;
+}
+
+.pdf-block:hover {
+    background-color: #ede8e8;
+    /* 鼠标悬停时的背景颜色 */
 }
 
 .pagination {
@@ -60,22 +79,27 @@ footer button {
 }
 
 .cover {
-    width: 120px;
-    height: 100%;
+    height: 150px;
+    border: 1px solid gray;
+    position: absolute;
+    top: 30px; /* 向下移动的距离 */
 }
 
 .title {
     /* position: relative; */
-    display: flex;
-    align-items: flex-start;
-    margin-top: 15px;
-    margin-left: 4px;
+    /* display: flex; */
+    /* align-items: flex-start; */
     color: rgb(65, 191, 216);
+    /* bottom: 100px; */
+    position: relative;
+    top: 100px; /* 向下移动的距离 */
 }
 
 .desc {
     position: relative;
-    bottom: 30px;
+    /* bottom: 30px; */
+    /* position: relative; */
+    top: 70px; /* 向下移动的距离 */
 }
 
 .bt-col {
@@ -86,4 +110,9 @@ footer button {
 .mb-2 {
     margin-bottom: 2em;
     /* You can adjust the value based on your preference */
+}
+
+.left {
+    position: fixed;
+    top: 60%;
 }
