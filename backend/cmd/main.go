@@ -1,7 +1,6 @@
 package main
 
 import (
-	"backend/pkg/user"
 	"flag"
 	"fmt"
 
@@ -11,7 +10,9 @@ import (
 	"backend/pkg/config"
 	"backend/pkg/database"
 	"backend/pkg/logger"
+	"backend/pkg/provider"
 	"backend/pkg/static"
+	"backend/pkg/user"
 )
 
 var configPath string
@@ -41,6 +42,10 @@ func main() {
 
 	if err := static.Init(); err != nil {
 		logrus.Fatalf("init static directory error: %v", err)
+	}
+
+	if err := provider.Init(); err != nil {
+		logrus.Fatalf("init provider error: %v", err)
 	}
 
 	if err := api.NewRoute().Run(fmt.Sprintf(":%d", config.Port())); err != nil {
