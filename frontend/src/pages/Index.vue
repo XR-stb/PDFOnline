@@ -25,7 +25,7 @@
                 <div class="pdf-container">
                     <div v-for="pdf in pdfList" :key="pdf.title" class="pdf-block" @click="openPDF(pdf.url)">
                         <!-- <img :src="pdf.cover_url" alt="加载封面失败" class="cover"> -->
-                        <el-image style="width: 100px; height: 100px" :src="pdf.cover_url" :fit="fit"></el-image>
+                        <el-image :src="pdf.cover_url" :fit="fit" class="cover"></el-image>
                         <p class="title">{{ pdf.title }}</p>
                         <p class="desc">{{ pdf.description }}</p>
                     </div>
