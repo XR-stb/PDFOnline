@@ -12,6 +12,7 @@ var Cfg *Config
 type Config struct {
 	Default  Default  `yaml:"default"`
 	Database Database `yaml:"database"`
+	SMTP     SMTP     `yaml:"smtp"`
 }
 
 func Parse(path string) error {
@@ -25,12 +26,7 @@ func Parse(path string) error {
 		return err
 	}
 
-	err = Cfg.Default.verify()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return Cfg.Default.verify()
 }
 
 func generateRandomString() string {

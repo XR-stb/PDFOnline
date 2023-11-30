@@ -15,18 +15,22 @@ import (
 	"backend/pkg/database/models"
 	"backend/pkg/user/role"
 	"backend/pkg/util"
+	"backend/pkg/verification"
 	"backend/test/testutil"
 )
 
 func TestUserAPI_Register(t *testing.T) {
 	database.Use(testutil.TestDB(t))
+	testEmail := "testEmail@example.com"
 
 	t.Run("success", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/register", UserRegisterOrLoginReq{
-			Username: "testUser",
-			Password: "123456",
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/register", RegisterUserReq{
+			Username:         "testUser",
+			Password:         "123456",
+			Email:            testEmail,
+			VerificationCode: verification.GenerateCode(testEmail),
 		})
 		UserAPI{}.Register(c)
 
@@ -40,11 +44,13 @@ func TestUserAPI_Register(t *testing.T) {
 		assert.NotNil(t, cookieHeader)
 	})
 
-	t.Run("username too short and password is nil", func(t *testing.T) {
+	t.Run("username too short, password is nil, email is invalid, length of verification code is 5", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/register", UserRegisterOrLoginReq{
-			Username: "test",
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/register", RegisterUserReq{
+			Username:         "test",
+			Email:            "INVALID_EMAIL",
+			VerificationCode: "12345",
 		})
 		UserAPI{}.Register(c)
 
@@ -52,15 +58,17 @@ func TestUserAPI_Register(t *testing.T) {
 		payload := map[string]any{}
 		err := json.NewDecoder(rec.Body).Decode(&payload)
 		assert.NoError(t, err)
-		assert.Equal(t, "username is too short, min 5 chars\npassword is required", payload["error"])
+		assert.Equal(t, "username is too short, min 5 chars\npassword is required\nemail is invalid\nlength of verification code should be 6", payload["error"])
 	})
 
 	t.Run("duplicate username", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/register", UserRegisterOrLoginReq{
-			Username: "testUser",
-			Password: "123456",
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/register", RegisterUserReq{
+			Username:         "testUser",
+			Password:         "123456",
+			Email:            testEmail,
+			VerificationCode: verification.GenerateCode(testEmail),
 		})
 		UserAPI{}.Register(c)
 
@@ -69,6 +77,87 @@ func TestUserAPI_Register(t *testing.T) {
 		err := json.NewDecoder(rec.Body).Decode(&payload)
 		assert.NoError(t, err)
 		assert.Equal(t, "username already exist", payload["error"])
+	})
+
+	t.Run("invalid verification code", func(t *testing.T) {
+		database.Use(testutil.TestDB(t))
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/register", RegisterUserReq{
+			Username:         "testUser",
+			Password:         "123456",
+			Email:            testEmail,
+			VerificationCode: "123456",
+		})
+		UserAPI{}.Register(c)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		payload := map[string]any{}
+		err := json.NewDecoder(rec.Body).Decode(&payload)
+		assert.NoError(t, err)
+		assert.Equal(t, "verification code invalid or expired", payload["error"])
+	})
+}
+
+func TestUserAPI_SendVerificationCode(t *testing.T) {
+	database.Use(testutil.TestDB(t))
+	testEmail := "testEmail@example.com"
+
+	t.Run("success", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/verificationcode", SendVerificationCodeReq{Email: testEmail})
+		UserAPI{}.SendVerificationCode(c)
+
+		c.Writer.WriteHeaderNow()
+		assert.Equal(t, http.StatusCreated, rec.Code)
+	})
+
+	t.Run("email is empty", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/verificationcode", SendVerificationCodeReq{})
+		UserAPI{}.SendVerificationCode(c)
+
+		c.Writer.WriteHeaderNow()
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		payload := map[string]any{}
+		err := json.NewDecoder(rec.Body).Decode(&payload)
+		assert.NoError(t, err)
+		assert.Equal(t, "email is required", payload["error"])
+	})
+
+	t.Run("email is invalid", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/verificationcode", SendVerificationCodeReq{Email: "testEmail"})
+		UserAPI{}.SendVerificationCode(c)
+
+		c.Writer.WriteHeaderNow()
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		payload := map[string]any{}
+		err := json.NewDecoder(rec.Body).Decode(&payload)
+		assert.NoError(t, err)
+		assert.Equal(t, "email is invalid", payload["error"])
+	})
+
+	t.Run("email already exist", func(t *testing.T) {
+		database.Instance().Create(&models.User{
+			Id:    uuid.New().String(),
+			Email: testEmail,
+		})
+
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/verificationcode", SendVerificationCodeReq{Email: testEmail})
+		UserAPI{}.SendVerificationCode(c)
+
+		c.Writer.WriteHeaderNow()
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		payload := map[string]any{}
+		err := json.NewDecoder(rec.Body).Decode(&payload)
+		assert.NoError(t, err)
+		assert.Equal(t, "email is already registered", payload["error"])
 	})
 }
 
@@ -83,7 +172,7 @@ func TestUserAPI_Login(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/login", UserRegisterOrLoginReq{
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/login", LoginUserReq{
 			Username: "testUser",
 			Password: "123456",
 		})
@@ -102,7 +191,7 @@ func TestUserAPI_Login(t *testing.T) {
 	t.Run("username not exist", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/login", UserRegisterOrLoginReq{
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/login", LoginUserReq{
 			Username: "testUser2",
 			Password: "123456",
 		})
@@ -118,7 +207,7 @@ func TestUserAPI_Login(t *testing.T) {
 	t.Run("username too short and password is nil", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/login", UserRegisterOrLoginReq{
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/login", LoginUserReq{
 			Username: "test",
 		})
 		UserAPI{}.Login(c)

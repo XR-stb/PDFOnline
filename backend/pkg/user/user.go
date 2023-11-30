@@ -66,6 +66,15 @@ func GetByUsername(username string) (*User, error) {
 	}, db.First(&user, "username = ?", username).Error
 }
 
+func GetByEmail(email string) (*User, error) {
+	db := database.Instance()
+	user := models.User{}
+	return &User{
+		user: &user,
+		db:   db,
+	}, db.First(&user, "email = ?", email).Error
+}
+
 func CreateInternalUser() error {
 	if err := createAdminUser(); err != nil {
 		return err
@@ -100,7 +109,7 @@ func createGuestUser() error {
 	var err error
 	if u, err = GetByUsername("guest"); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if u, err = Create("guest", "guest123", "", role.RoleGuest); err != nil {
+			if u, err = Create("guest", "guest123", "guest@mail.com", role.RoleGuest); err != nil {
 				return fmt.Errorf("failed to create guest user: %v", err)
 			}
 		} else {

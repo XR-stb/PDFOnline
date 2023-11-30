@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,8 +12,10 @@ import (
 	"backend/pkg/api/apiutil"
 	"backend/pkg/api/apiutil/jwt"
 	"backend/pkg/api/hooks"
+	"backend/pkg/provider"
 	"backend/pkg/user"
 	"backend/pkg/user/role"
+	"backend/pkg/verification"
 )
 
 type UserAPI struct{}
@@ -23,6 +26,11 @@ func (u UserAPI) Routes() []apiutil.Route {
 			Method:  http.MethodPost,
 			Pattern: "/v1/users/register",
 			Handler: u.Register,
+		},
+		{
+			Method:  http.MethodPost,
+			Pattern: "/v1/users/verificationcode",
+			Handler: u.SendVerificationCode,
 		},
 		{
 			Method:  http.MethodPost,
@@ -60,13 +68,15 @@ func (u UserAPI) Routes() []apiutil.Route {
 	}
 }
 
-type UserRegisterOrLoginReq struct {
-	Username string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
-	Password string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
+type RegisterUserReq struct {
+	Username         string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
+	Password         string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
+	Email            string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
+	VerificationCode string `json:"verification_code" binding:"required,len=6" required:"verification code is required" len:"length of verification code should be 6"`
 }
 
 func (UserAPI) Register(c *gin.Context) {
-	var req UserRegisterOrLoginReq
+	var req RegisterUserReq
 	if err := apiutil.ShouldBind(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -74,7 +84,15 @@ func (UserAPI) Register(c *gin.Context) {
 		return
 	}
 
-	u, err := user.Create(req.Username, req.Password, "", role.RoleUser)
+	err := verification.VerifyCode(req.Email, req.VerificationCode)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	u, err := user.Create(req.Username, req.Password, req.Email, role.RoleUser)
 	if err != nil {
 		if errors.Is(err, user.ErrUserAlreadyExist) {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -99,8 +117,55 @@ func (UserAPI) Register(c *gin.Context) {
 	})
 }
 
+type SendVerificationCodeReq struct {
+	Email string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
+}
+
+var (
+	bodyTemplate    = `Your verification code is: %s, please use it within 10 minutes.`
+	subjectTemplate = `Verification Code`
+)
+
+func (UserAPI) SendVerificationCode(c *gin.Context) {
+	var req SendVerificationCodeReq
+	if err := apiutil.ShouldBind(c, &req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	_, err := user.GetByEmail(req.Email)
+	switch {
+	case err == nil:
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "email is already registered",
+		})
+		return
+	case errors.Is(err, gorm.ErrRecordNotFound):
+	default:
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	err = provider.Send(req.Email, subjectTemplate, fmt.Sprintf(bodyTemplate, verification.GenerateCode(req.Email)))
+	if err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+type LoginUserReq struct {
+	Username string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
+	Password string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
+}
+
 func (UserAPI) Login(c *gin.Context) {
-	var req UserRegisterOrLoginReq
+	var req LoginUserReq
 	if err := apiutil.ShouldBind(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
