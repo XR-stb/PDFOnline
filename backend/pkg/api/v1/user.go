@@ -12,10 +12,10 @@ import (
 	"backend/pkg/api/apiutil"
 	"backend/pkg/api/apiutil/jwt"
 	"backend/pkg/api/hooks"
+	"backend/pkg/captcha"
 	"backend/pkg/provider"
 	"backend/pkg/user"
 	"backend/pkg/user/role"
-	"backend/pkg/verification"
 )
 
 type UserAPI struct{}
@@ -24,13 +24,13 @@ func (u UserAPI) Routes() []apiutil.Route {
 	return []apiutil.Route{
 		{
 			Method:  http.MethodPost,
-			Pattern: "/v1/users/register",
+			Pattern: "/v1/users",
 			Handler: u.Register,
 		},
 		{
 			Method:  http.MethodPost,
-			Pattern: "/v1/users/verificationcode",
-			Handler: u.SendVerificationCode,
+			Pattern: "/v1/users/captcha",
+			Handler: u.SendCaptcha,
 		},
 		{
 			Method:  http.MethodPost,
@@ -69,10 +69,10 @@ func (u UserAPI) Routes() []apiutil.Route {
 }
 
 type RegisterUserReq struct {
-	Username         string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
-	Password         string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
-	Email            string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
-	VerificationCode string `json:"verification_code" binding:"required,len=6" required:"verification code is required" len:"length of verification code should be 6"`
+	Username string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
+	Password string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
+	Email    string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
+	Captcha  string `json:"captcha" binding:"required,len=6" required:"captcha is required" len:"length of captcha should be 6"`
 }
 
 func (UserAPI) Register(c *gin.Context) {
@@ -84,7 +84,7 @@ func (UserAPI) Register(c *gin.Context) {
 		return
 	}
 
-	err := verification.VerifyCode(req.Email, req.VerificationCode)
+	err := captcha.Verify(req.Email, req.Captcha)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -117,17 +117,17 @@ func (UserAPI) Register(c *gin.Context) {
 	})
 }
 
-type SendVerificationCodeReq struct {
+type SendCaptchaReq struct {
 	Email string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
 }
 
 var (
-	bodyTemplate    = `Your verification code is: %s, please use it within 10 minutes.`
+	bodyTemplate    = `Your captcha is: %s, please use it within 10 minutes.`
 	subjectTemplate = `Verification Code`
 )
 
-func (UserAPI) SendVerificationCode(c *gin.Context) {
-	var req SendVerificationCodeReq
+func (UserAPI) SendCaptcha(c *gin.Context) {
+	var req SendCaptchaReq
 	if err := apiutil.ShouldBind(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -149,7 +149,7 @@ func (UserAPI) SendVerificationCode(c *gin.Context) {
 		return
 	}
 
-	err = provider.Send(req.Email, subjectTemplate, fmt.Sprintf(bodyTemplate, verification.GenerateCode(req.Email)))
+	err = provider.Send(req.Email, subjectTemplate, fmt.Sprintf(bodyTemplate, captcha.Generate(req.Email)))
 	if err != nil {
 		logrus.Warn(err)
 		c.Status(http.StatusInternalServerError)

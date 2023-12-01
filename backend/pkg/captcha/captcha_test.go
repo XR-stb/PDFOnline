@@ -1,4 +1,4 @@
-package verification
+package captcha
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 
 func TestGenerateCode(t *testing.T) {
 	testEmail := "testemail@example.com"
-	code := GenerateCode(testEmail)
+	code := Generate(testEmail)
 	assert.Len(t, code, codeLength)
 }
 
@@ -16,21 +16,21 @@ func TestVerifyCode(t *testing.T) {
 	testEmail := "testemail@example.com"
 
 	t.Run("valid code", func(t *testing.T) {
-		code := GenerateCode(testEmail)
-		err := VerifyCode(testEmail, code)
+		code := Generate(testEmail)
+		err := Verify(testEmail, code)
 		assert.NoError(t, err)
 	})
 
 	t.Run("invalid code", func(t *testing.T) {
-		GenerateCode(testEmail)
-		err := VerifyCode(testEmail, "123456")
+		Generate(testEmail)
+		err := Verify(testEmail, "123456")
 		assert.ErrorIs(t, err, ErrCodeInvalid)
 	})
 
 	t.Run("expired code", func(t *testing.T) {
-		GenerateCode(testEmail)
+		Generate(testEmail)
 		codeMap.Delete(testEmail)
-		err := VerifyCode(testEmail, "123456")
+		err := Verify(testEmail, "123456")
 		assert.ErrorIs(t, err, ErrCodeInvalid)
 	})
 }
