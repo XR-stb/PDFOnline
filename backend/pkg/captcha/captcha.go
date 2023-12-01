@@ -1,4 +1,4 @@
-package verification
+package captcha
 
 import (
 	"errors"
@@ -18,16 +18,16 @@ const (
 var (
 	codeMap = new(memcache.MemCache)
 
-	ErrCodeInvalid = errors.New("verification code invalid or expired")
+	ErrCodeInvalid = errors.New("captcha invalid or expired")
 )
 
-func GenerateCode(email string) string {
+func Generate(email string) string {
 	code := randomCode(codeLength)
 	codeMap.SetWithExpire(email, code, codeExpire)
 	return code
 }
 
-func VerifyCode(email, code string) error {
+func Verify(email, code string) error {
 	if v, ok := codeMap.Get(email); ok && v == code {
 		codeMap.Delete(email)
 		return nil
