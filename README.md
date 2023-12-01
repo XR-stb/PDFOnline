@@ -1,6 +1,5 @@
 # PDFOnline
 
-
 ## Start
 
 ### frontend
@@ -15,7 +14,15 @@ npm install
 npm run serve
 ```
 
-## backend
+### frontend-react
+
+```shell
+cd frontend-react
+npm install
+npm run serve
+```
+
+### backend
 
 golang >= 1.20
 
