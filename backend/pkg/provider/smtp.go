@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/smtp"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 
@@ -16,6 +17,7 @@ var template = "To: %s\r\nSubject: %s\r\n\r\n%s\r\n"
 
 type SMTP struct {
 	client *smtp.Client
+	mu     sync.Mutex
 }
 
 func (s *SMTP) Init() error {
@@ -52,8 +54,7 @@ func (s *SMTP) Init() error {
 	return nil
 }
 
-func (s *SMTP) Send(to, subject, body string) error {
-	logrus.Debug(to)
+func (s *SMTP) send(to, subject, body string) error {
 	err := s.client.Rcpt(to)
 	if err != nil {
 		return err
@@ -72,6 +73,25 @@ func (s *SMTP) Send(to, subject, body string) error {
 	err = wc.Close()
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *SMTP) Send(to, subject, body string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	err := s.send(to, subject, body)
+	if err != nil {
+		logrus.Warnf("smtp send failed, error: %v, reconnect and try again", err)
+		err = s.Init()
+		if err != nil {
+			return err
+		}
+		err = s.send(to, subject, body)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
