@@ -48,7 +48,7 @@ func TestUserAPI_Register(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
 		c.Request = testutil.NewRequest(t, http.MethodPost, "/users", RegisterUserReq{
-			Username: "test",
+			Username: "t",
 			Email:    "INVALID_EMAIL",
 			Captcha:  "12345",
 		})
@@ -58,7 +58,7 @@ func TestUserAPI_Register(t *testing.T) {
 		payload := map[string]any{}
 		err := json.NewDecoder(rec.Body).Decode(&payload)
 		assert.NoError(t, err)
-		assert.Equal(t, "username is too short, min 5 chars\npassword is required\nemail is invalid\nlength of captcha should be 6", payload["error"])
+		assert.Equal(t, "username is too short, min 2 chars\npassword is required\nemail is invalid\nlength of captcha should be 6", payload["error"])
 	})
 
 	t.Run("duplicate username", func(t *testing.T) {

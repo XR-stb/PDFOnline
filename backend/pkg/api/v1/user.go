@@ -69,7 +69,7 @@ func (u UserAPI) Routes() []apiutil.Route {
 }
 
 type RegisterUserReq struct {
-	Username string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
+	Username string `json:"username" binding:"required,min=2,max=32" required:"username is required" min:"username is too short, min 2 chars" max:"username is too long, max 32 chars"`
 	Password string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
 	Email    string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
 	Captcha  string `json:"captcha" binding:"required,len=6" required:"captcha is required" len:"length of captcha should be 6"`
@@ -77,7 +77,7 @@ type RegisterUserReq struct {
 
 func (UserAPI) Register(c *gin.Context) {
 	var req RegisterUserReq
-	if err := apiutil.ShouldBind(c, &req); err != nil {
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -128,7 +128,7 @@ var (
 
 func (UserAPI) SendCaptcha(c *gin.Context) {
 	var req SendCaptchaReq
-	if err := apiutil.ShouldBind(c, &req); err != nil {
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -166,7 +166,7 @@ type LoginUserReq struct {
 
 func (UserAPI) Login(c *gin.Context) {
 	var req LoginUserReq
-	if err := apiutil.ShouldBind(c, &req); err != nil {
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -233,7 +233,7 @@ type UpdateUserReq struct {
 
 func (UserAPI) Update(c *gin.Context) {
 	var req UpdateUserReq
-	if err := apiutil.ShouldBind(c, &req); err != nil {
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -268,7 +268,7 @@ type UpdateUserPasswordReq struct {
 
 func (UserAPI) UpdatePassword(c *gin.Context) {
 	var req UpdateUserPasswordReq
-	if err := apiutil.ShouldBind(c, &req); err != nil {
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -309,7 +309,7 @@ type UpdateUserRoleReq struct {
 
 func (UserAPI) UpdateRole(c *gin.Context) {
 	var req UpdateUserRoleReq
-	if err := apiutil.ShouldBind(c, &req); err != nil {
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
