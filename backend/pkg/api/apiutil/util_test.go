@@ -23,8 +23,7 @@ func TestShouldBindJSON(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	c.Request = httptest.NewRequest("POST", "/", bytes.NewReader(b))
-	c.Request.Header.Set("Content-Type", "application/json")
 
-	err = ShouldBind(c, &Req{})
+	err = ShouldBindJSON(c, &Req{})
 	assert.Equal(t, err.Error(), "username is too short, min 6 chars\npassword is required")
 }

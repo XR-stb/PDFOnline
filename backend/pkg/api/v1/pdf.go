@@ -53,7 +53,7 @@ type UploadPdfReq struct {
 func (PdfAPI) Upload(c *gin.Context) {
 	var params UploadPdfReq
 
-	if err := apiutil.ShouldBind(c, &params); err != nil {
+	if err := apiutil.ShouldBindForm(c, &params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})

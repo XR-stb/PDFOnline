@@ -3,7 +3,7 @@ import {FormRule} from "antd";
 export const usernameRules: FormRule[] = [
   {required: true, message: 'Please input your username!', whitespace: true},
   {max: 32, message: 'Must be less than 32 characters!'},
-  {min: 5, message: 'Must be more than 5 characters!'}
+  {min: 2, message: 'Must be more than 2 characters!'}
 ]
 
 export const passwordRules: FormRule[] = [
