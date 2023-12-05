@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button, Modal } from "antd";
-import SignUpForm from "./forms/signup";
+import SignUpForm from "../forms/signup";
 
 interface SignUpButtonProps {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>

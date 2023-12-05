@@ -5,14 +5,16 @@ import Logo from "./logo";
 import MenuComponent from "./menu";
 import SignUpButton from "./signup";
 import LoginButton from "./login";
-import useUser from "../../auth/user";
 import User from "./user";
+import {UserType} from "../../types";
 
 const { Header } = Layout;
 
-const HeaderComponent: React.FC = () => {
-  const { loggedIn,user, setLoggedIn } = useUser()
+interface HeaderProps {
+  user: {user: UserType | undefined, loggedIn: boolean, setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>}
+}
 
+const HeaderComponent: React.FC<HeaderProps> = ( { user} ) => {
   return (
     <Header style={headerStyle}>
       <Space>
@@ -20,7 +22,7 @@ const HeaderComponent: React.FC = () => {
       </Space>
       <Space>
         <MenuComponent />
-        {loggedIn ? <User user={user} setLoggedIn={setLoggedIn} /> : <><SignUpButton setLoggedIn={setLoggedIn} /><LoginButton setLoggedIn={setLoggedIn} /></>}
+        {user.loggedIn ? <User user={user.user} setLoggedIn={user.setLoggedIn} /> : <><SignUpButton setLoggedIn={user.setLoggedIn} /><LoginButton setLoggedIn={user.setLoggedIn} /></>}
       </Space>
     </Header>
   );
