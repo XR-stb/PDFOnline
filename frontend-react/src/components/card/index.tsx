@@ -1,8 +1,9 @@
 import { useState} from "react";
 import { Button, Card, Flex, Typography } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
+
 import { cardStyle, imgStyle } from "./styles";
-import {PdfType} from "../../types";
+import { PdfType } from "../../types";
 
 interface CardComponentProps {
   pdf: PdfType

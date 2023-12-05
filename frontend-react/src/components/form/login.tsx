@@ -1,15 +1,17 @@
-import { useState } from "react";
-import { Button, Form, message, Modal } from "antd";
-import { FormStyle } from "./styles";
+import { Button, Form, message, Popconfirm } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+
+import { formStyle, guestLoginIconStyle } from "./styles";
 import { PasswordItem, UsernameItem } from "./items";
 import { login } from "../../api/pdfonline/user";
 
-
 interface LoginFormProps {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
+  hideLoginModal: () => void
+  showSignUpModal: () => void
 }
 
-const LoginForm = ({setLoggedIn}: LoginFormProps) => {
+const LoginForm = ({ setLoggedIn, hideLoginModal, showSignUpModal}: LoginFormProps) => {
   const [form] = Form.useForm();
   const onFinish = () =>  {
     Promise.resolve(login(form.getFieldsValue())).then(user_id => {
@@ -20,49 +22,37 @@ const LoginForm = ({setLoggedIn}: LoginFormProps) => {
     })
   };
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleGuest = () => {
-    setIsModalOpen(true);
-  };
-
   const handleOk = () => {
     form.setFieldValue('username', 'guest');
     form.setFieldValue('password', 'guest123');
     form.submit()
-    setIsModalOpen(false);
   };
 
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
+  const handleSignUp = () => {
+    hideLoginModal();
+    showSignUpModal();
+  }
 
   return (
     <Form
       form={form}
       name="login"
       onFinish={onFinish}
-      style={FormStyle}
+      style={formStyle}
       scrollToFirstError
     >
       <Items />
       <Button type="primary" htmlType="submit" style={{width: '100%'}}>
         Log In
       </Button>
-      <div>
-        <p><>Don't have an account? </>
-          <a>
-            Sign Up
-          </a>
-          <> or </>
-          <Modal title="Reconfirm" open={isModalOpen} onOk={handleOk} onCancel={handleCancel} okText={"Yes"}>
-            Are you sure to log in as a guest?
-          </Modal>
-          <a onClick={handleGuest}>
-            Guest
-          </a>
-        </p>
-      </div>
+      <p>
+        <>Don't have an account? </>
+        <a onClick={handleSignUp}>Sign Up</a>
+        <> or </>
+        <Popconfirm title={"Are you sure to log in as guest?"} placement={"bottom"} okText={"Yes"} cancelText={"No"} onConfirm={handleOk} icon={<UserOutlined style={guestLoginIconStyle} />}>
+          <a>Guest</a>
+        </Popconfirm>
+      </p>
     </Form>
   )
 }

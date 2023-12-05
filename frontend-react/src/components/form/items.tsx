@@ -1,5 +1,6 @@
-import {Button, Checkbox, Form, Input, Space, UploadProps, Upload, message, FormInstance} from "antd";
+import { Button, Checkbox, Form, Input, Space, Upload } from "antd";
 import { InboxOutlined } from '@ant-design/icons';
+
 import {
   usernameRules,
   passwordRules,

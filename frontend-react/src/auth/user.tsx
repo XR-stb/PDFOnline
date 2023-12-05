@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { UserType } from "../types";
-import { getMe } from "../api/pdfonline/user";
 import { message } from "antd";
 
+import { UserType } from "../types";
+import { getMe } from "../api/pdfonline/user";
+
 const useUser = () => {
-  const [user, setUser] = useState<UserType | undefined>(undefined);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [ user, setUser ] = useState<UserType | undefined>(undefined);
+  const [ loggedIn, setLoggedIn ] = useState(false);
 
   const fetchUser = (ignoreError: boolean = false) => {
-    if (user===undefined) {
+    if ( user === undefined ) {
       Promise.resolve(getMe()).then((user) => {
         setUser(user);
         setLoggedIn(true);

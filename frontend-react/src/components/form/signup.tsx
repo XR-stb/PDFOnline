@@ -1,15 +1,16 @@
+import React, { useEffect, useState } from "react";
 import { Button, Form, message } from "antd";
+
 import { AgreementItem, CaptchaItem, ConfirmPasswordItem, EmailItem, PasswordItem, UsernameItem } from "./items";
-import { useEffect, useState } from "react";
-import { FormStyle } from "./styles";
+import {formStyle, signUpButtonStyle} from "./styles";
 import { getCaptcha, register } from "../../api/pdfonline/user";
 
 interface SignUpFormProps {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const SignUpForm = ({setLoggedIn}: SignUpFormProps) => {
-  const [form] = Form.useForm();
+const SignUpForm = ({ setLoggedIn }: SignUpFormProps) => {
+  const [ form ] = Form.useForm();
   const onFinish = async () =>  {
     register(form.getFieldsValue()).then(user_id => {
       setLoggedIn(true);
@@ -56,27 +57,16 @@ const SignUpForm = ({setLoggedIn}: SignUpFormProps) => {
   }, [isCounting]);
 
   return (
-    <Form
-      form={form}
-      name="signup"
-      onFinish={onFinish}
-      style={FormStyle}
-      scrollToFirstError
-    >
-      <>
-        <UsernameItem />
-        <PasswordItem />
-        <ConfirmPasswordItem />
-        <EmailItem />
-        <CaptchaItem handleGetCaptcha={HandleGetCaptcha} isCounting={isCounting} countdown={countdown} />
-        <AgreementItem />
-      </>
-      <Button type="primary" htmlType="submit" style={{width: '100%'}}>
+    <Form form={form} name="signup" onFinish={onFinish} style={formStyle}>
+      <UsernameItem />
+      <PasswordItem />
+      <ConfirmPasswordItem />
+      <EmailItem />
+      <CaptchaItem handleGetCaptcha={HandleGetCaptcha} isCounting={isCounting} countdown={countdown} />
+      <AgreementItem />
+      <Button type="primary" htmlType="submit" style={signUpButtonStyle}>
         Sign Up
       </Button>
-      <div>
-        <p>Already have an account? <a>Log in</a></p>
-      </div>
     </Form>
   )
 }
