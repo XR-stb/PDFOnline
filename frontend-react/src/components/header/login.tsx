@@ -3,10 +3,10 @@ import {useState} from "react";
 import LoginForm from "./forms/login";
 
 interface LoginButtonProps {
-  setMyUser: (user_id: string) => void;
+  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const LoginButton = ({setMyUser}: LoginButtonProps) => {
+const LoginButton = ({setLoggedIn}: LoginButtonProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const showModal = () => {
     setIsModalOpen(true);
@@ -24,7 +24,7 @@ const LoginButton = ({setMyUser}: LoginButtonProps) => {
         Log In
       </Button>
       <Modal title="Log In" footer={null} open={isModalOpen} onCancel={handleCancel}>
-        <LoginForm setMyUser={setMyUser} />
+        <LoginForm setLoggedIn={setLoggedIn} />
       </Modal>
     </>
   );

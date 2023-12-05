@@ -3,10 +3,10 @@ import {Button, Modal} from "antd";
 import SignUpForm from "./forms/signup";
 
 interface SignUpButtonProps {
-  setMyUser: (user_id: string) => void;
+  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const SignUpButton = ({setMyUser}: SignUpButtonProps) => {
+const SignUpButton = ({setLoggedIn}: SignUpButtonProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const showModal = () => {
     setIsModalOpen(true);
@@ -25,7 +25,7 @@ const SignUpButton = ({setMyUser}: SignUpButtonProps) => {
         Sign Up
       </Button>
       <Modal title="Sign Up" footer={null} open={isModalOpen} onCancel={handleCancel}>
-        <SignUpForm setMyUser={setMyUser} />
+        <SignUpForm setLoggedIn={setLoggedIn} />
       </Modal>
     </>
   );

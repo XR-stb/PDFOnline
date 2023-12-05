@@ -8,7 +8,7 @@ export function PDFOnlineClient<T>(config: AxiosRequestConfig) {
     .request<T>(config)
     .then(pickData)
     .catch((error) => {
-      console.log(error.response.url)
+      console.log(error?.request?.url)
       throw new HTTPError(parseErrorMessage(error), error?.response?.status);
     });
 }

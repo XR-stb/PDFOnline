@@ -12,7 +12,7 @@ import User from "./user";
 const { Header } = Layout;
 
 const HeaderComponent: React.FC = () => {
-  const { loggedIn,user, setMyUser } = useUser()
+  const { loggedIn,user, setLoggedIn } = useUser()
 
   return (
     <Header style={headerStyle}>
@@ -21,7 +21,7 @@ const HeaderComponent: React.FC = () => {
       </Space>
       <Space>
         <MenuComponent />
-        {loggedIn ? <User user={user} setMyUser={setMyUser} /> : <><SignUpButton setMyUser={setMyUser} /><LoginButton setMyUser={setMyUser} /></>}
+        {loggedIn ? <User user={user} setLoggedIn={setLoggedIn} /> : <><SignUpButton setLoggedIn={setLoggedIn} /><LoginButton setLoggedIn={setLoggedIn} /></>}
       </Space>
     </Header>
   );

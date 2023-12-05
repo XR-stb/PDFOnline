@@ -16,7 +16,7 @@ interface RegisterOpts {
 
 export const register = (data: RegisterOpts) =>
   PDFOnlineClient<{user_id:string}>({
-    url: "users/register",
+    url: "users",
     method: "post",
     data,
   }).then((data) => data.user_id)
@@ -49,4 +49,11 @@ export const getUserInfo = (user_id: string) =>
   PDFOnlineClient<{user: User}>({
     url: `users/${user_id}`,
     method: "get",
+  }).then((data) => data.user)
+
+export const getMe = () =>
+  PDFOnlineClient<{user: User}>({
+    url: `users`,
+    method: "get",
+    // withCredentials: true,
   }).then((data) => data.user)

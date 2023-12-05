@@ -4,6 +4,8 @@ export const pickData = <T>(response: AxiosResponse<T>) => response.data;
 
 const API_URL = "http://localhost:8080";
 
+axios.defaults.withCredentials = true;
+
 export const client = axios.create({
   baseURL: `${API_URL}/v1`,
   headers: {

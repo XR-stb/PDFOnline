@@ -5,14 +5,14 @@ import {FormStyle} from "./styles";
 import {getCaptcha, register} from "../../../api/pdfonline/user";
 
 interface SignUpFormProps {
-  setMyUser: (user_id: string) => void;
+  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const SignUpForm = ({setMyUser}: SignUpFormProps) => {
+const SignUpForm = ({setLoggedIn}: SignUpFormProps) => {
   const [form] = Form.useForm();
   const onFinish = async () =>  {
     register(form.getFieldsValue()).then(user_id => {
-      setMyUser(user_id)
+      setLoggedIn(true);
       message.success('Sign Up successfully!');
     }).catch((error) => {
       message.error(error.message);

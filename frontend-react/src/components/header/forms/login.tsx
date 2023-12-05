@@ -5,14 +5,14 @@ import {login} from "../../../api/pdfonline/user";
 
 
 interface LoginFormProps {
-  setMyUser: (user_id: string) => void;
+  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const LoginForm = ({setMyUser}: LoginFormProps) => {
+const LoginForm = ({setLoggedIn}: LoginFormProps) => {
   const [form] = Form.useForm();
   const onFinish = async () =>  {
     login(form.getFieldsValue()).then(user_id => {
-      setMyUser(user_id)
+      setLoggedIn(true);
       message.success('Log in successfully!');
     }).catch((error) => {
       message.error(error.message);

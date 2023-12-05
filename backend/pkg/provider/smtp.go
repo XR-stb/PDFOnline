@@ -36,12 +36,8 @@ func (s *SMTP) Init() error {
 		}
 	}
 
-	if err = c.Auth(smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)); err != nil {
-		logrus.Warn("smtp plain auth failed, try login auth")
-		err = c.Auth(LoginAuth(smtpConfig.Username, smtpConfig.Password, smtpConfig.Host))
-		if err != nil {
-			return fmt.Errorf("smtp auth failed, error: %v", err)
-		}
+	if err = c.Auth(LoginAuth(smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)); err != nil {
+		return fmt.Errorf("smtp auth failed, error: %v", err)
 	}
 
 	err = c.Mail(smtpConfig.From)

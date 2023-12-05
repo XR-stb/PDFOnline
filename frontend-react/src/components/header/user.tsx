@@ -5,24 +5,24 @@ import {logout} from "../../api/pdfonline/user";
 
 interface UserProps {
   user: any
-  setMyUser: (user_id: string) => void;
+  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const User = ({user, setMyUser}: UserProps) => {
+const User = ({user, setLoggedIn}: UserProps) => {
   return (
-    <Popover placement="bottomRight" title={user.username} content={<PopoverContent user={user} setMyUser={setMyUser} />} style={userPopoverStyle}>
+    <Popover placement="bottomRight" title={user?.username} content={<PopoverContent user={user} setLoggedIn={setLoggedIn} />} style={userPopoverStyle}>
       <Space>
         <Avatar icon={<UserOutlined />} />
-        {user.username}
+        {user?.username}
       </Space>
     </Popover>
   )
 }
 
-const PopoverContent = ({user, setMyUser}: UserProps) =>{
+const PopoverContent = ({user, setLoggedIn}: UserProps) =>{
   const onClick = () => {
     logout()
-    setMyUser('')
+    setLoggedIn(false)
   }
   return (
     <Button type="primary" danger onClick={onClick}>Logout</Button>

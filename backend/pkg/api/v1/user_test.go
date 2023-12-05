@@ -264,6 +264,39 @@ func TestUserAPI_Show(t *testing.T) {
 	})
 }
 
+func TestUserAPI_ShowMe(t *testing.T) {
+	database.Use(testutil.TestDB(t))
+	user := models.User{
+		Id:       uuid.New().String(),
+		Username: "testUser",
+		Email:    "email@example.com",
+		Password: "123456",
+		Role:     role.RoleUser,
+	}
+	database.Instance().Create(&user)
+
+	t.Run("success", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Set(apiutil.CtxUserId, user.Id)
+		c.Set(apiutil.CtxRole, role.RoleUser)
+		UserAPI{}.ShowMe(c)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		payload := map[string]any{}
+		err := json.NewDecoder(rec.Body).Decode(&payload)
+		assert.NoError(t, err)
+		expected := map[string]any{
+			"user": map[string]any{
+				"id":       user.Id,
+				"username": user.Username,
+				"email":    user.Email,
+			},
+		}
+		assert.EqualValues(t, expected, payload)
+	})
+}
+
 func TestUserAPI_Logout(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		rec := httptest.NewRecorder()
@@ -272,7 +305,7 @@ func TestUserAPI_Logout(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rec.Code)
 		cookieHeader := rec.Header().Get("Set-Cookie")
-		assert.Equal(t, `token=; Path=/; Max-Age=0; HttpOnly`, cookieHeader)
+		assert.Equal(t, `TOKEN=; Path=/; Max-Age=0`, cookieHeader)
 	})
 }
 
