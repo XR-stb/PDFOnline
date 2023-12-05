@@ -29,6 +29,7 @@ const MenuComponent: React.FC = () => {
         mode="horizontal"
         items={Items}
         onClick={onClick}
+        selectable={false}
       />
     </>
   )

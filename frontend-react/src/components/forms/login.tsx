@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, Form, message, Modal } from "antd";
 import { FormStyle } from "./styles";
 import { PasswordItem, UsernameItem } from "./items";
-import { login } from "../../../api/pdfonline/user";
+import { login } from "../../api/pdfonline/user";
 
 
 interface LoginFormProps {
@@ -55,7 +55,7 @@ const LoginForm = ({setLoggedIn}: LoginFormProps) => {
             Sign Up
           </a>
           <> or </>
-          <Modal title="Basic Modal" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+          <Modal title="Reconfirm" open={isModalOpen} onOk={handleOk} onCancel={handleCancel} okText={"Yes"}>
             Are you sure to log in as a guest?
           </Modal>
           <a onClick={handleGuest}>

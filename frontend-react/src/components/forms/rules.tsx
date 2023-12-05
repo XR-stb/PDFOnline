@@ -42,3 +42,13 @@ export const agreementRules: FormRule[] = [
       value ? Promise.resolve() : Promise.reject(new Error('Should accept agreement')),
   },
 ]
+
+export const titleRules: FormRule[] = [
+  {required: true, message: 'Please input the title!', whitespace: true},
+  {max: 32, message: 'Must be less than 32 characters!'},
+]
+
+export const descriptionRules: FormRule[] = [
+  {required: true, message: 'Please input the description!', whitespace: true},
+  {max: 100, message: 'Must be less than 100 characters!'},
+]
