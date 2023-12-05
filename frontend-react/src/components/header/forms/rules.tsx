@@ -1,4 +1,4 @@
-import {FormRule} from "antd";
+import { FormRule } from "antd";
 
 export const usernameRules: FormRule[] = [
   {required: true, message: 'Please input your username!', whitespace: true},

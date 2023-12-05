@@ -1,16 +1,8 @@
 import { PDFOnlineClient } from "./client";
-
-export interface Pdf {
-  id: string;
-  author: string;
-  title: string;
-  description: string;
-  url: string;
-  cover_url: string;
-}
+import { PdfType } from "../../types";
 
 export const listPdfs = () =>
-  PDFOnlineClient<{pdfs: Pdf[]}>({
+  PDFOnlineClient<{pdfs: PdfType[]}>({
     url: "pdfs",
     method: "get",
   }).then((data) => data.pdfs);

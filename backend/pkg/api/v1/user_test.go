@@ -247,6 +247,7 @@ func TestUserAPI_Show(t *testing.T) {
 				"id":       user.Id,
 				"username": user.Username,
 				"email":    user.Email,
+				"role":     float64(user.Role),
 			},
 		}
 		assert.EqualValues(t, expected, payload)
@@ -291,6 +292,7 @@ func TestUserAPI_ShowMe(t *testing.T) {
 				"id":       user.Id,
 				"username": user.Username,
 				"email":    user.Email,
+				"role":     float64(user.Role),
 			},
 		}
 		assert.EqualValues(t, expected, payload)

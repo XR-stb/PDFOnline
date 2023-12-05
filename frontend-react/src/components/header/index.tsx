@@ -1,6 +1,5 @@
 import React from "react";
 import { Layout, Space } from 'antd';
-
 import { headerStyle } from "./styles";
 import Logo from "./logo";
 import MenuComponent from "./menu";

@@ -1,6 +1,6 @@
-import {Button, Checkbox, Form, Input, Space} from "antd";
-import {usernameRules, passwordRules, confirmPasswordRules, emailRules, captchaRules, agreementRules} from "./rules";
-import {MouseEventHandler, useEffect, useState} from "react";
+import { Button, Checkbox, Form, Input, Space } from "antd";
+import { usernameRules, passwordRules, confirmPasswordRules, emailRules, captchaRules, agreementRules } from "./rules";
+import { MouseEventHandler} from "react";
 
 export const UsernameItem = () => {
   return (

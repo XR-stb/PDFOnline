@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {Button, Modal} from "antd";
+import { useState } from "react";
+import { Button, Modal } from "antd";
 import SignUpForm from "./forms/signup";
 
 interface SignUpButtonProps {
