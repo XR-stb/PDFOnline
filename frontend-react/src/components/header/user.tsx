@@ -1,10 +1,11 @@
-import {Avatar, Button, Popover, Space} from "antd";
+import { Avatar, Button, Popover, Space } from "antd";
 import { UserOutlined } from '@ant-design/icons';
-import {userPopoverStyle} from "./styles";
-import {logout} from "../../api/pdfonline/user";
+import { userPopoverStyle } from "./styles";
+import { logout } from "../../api/pdfonline/user";
+import { UserType } from "../../types";
 
 interface UserProps {
-  user: any
+  user: UserType | undefined
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -19,13 +20,23 @@ const User = ({user, setLoggedIn}: UserProps) => {
   )
 }
 
+const roleMap:{[key: number]: string} = {
+  0: "Guest",
+  1: "User",
+  2: "Admin"
+}
+
 const PopoverContent = ({user, setLoggedIn}: UserProps) =>{
   const onClick = () => {
     logout()
     setLoggedIn(false)
   }
   return (
-    <Button type="primary" danger onClick={onClick}>Logout</Button>
+    <>
+      <p>Email: {user?.email}</p>
+      <p>Role: {roleMap[user?.role as number]}</p>
+      <Button type="primary" danger onClick={onClick}>Logout</Button>
+    </>
   )
 }
 

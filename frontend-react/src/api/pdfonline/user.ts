@@ -1,4 +1,5 @@
 import { PDFOnlineClient } from "./client";
+import { UserType } from "../../types";
 
 export const getCaptcha = (email: string) =>
   PDFOnlineClient({
@@ -39,20 +40,14 @@ export const logout = () =>
     method: "post",
   })
 
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-}
-
 export const getUserInfo = (user_id: string) =>
-  PDFOnlineClient<{user: User}>({
+  PDFOnlineClient<{user: UserType}>({
     url: `users/${user_id}`,
     method: "get",
   }).then((data) => data.user)
 
 export const getMe = () =>
-  PDFOnlineClient<{user: User}>({
+  PDFOnlineClient<{user: UserType}>({
     url: `users`,
     method: "get",
     // withCredentials: true,

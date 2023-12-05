@@ -1,7 +1,8 @@
-import {Button, Form, message} from "antd";
-import {PasswordItem, UsernameItem} from "./items";
-import {FormStyle} from "./styles";
-import {login} from "../../../api/pdfonline/user";
+import { useState } from "react";
+import { Button, Form, message, Modal } from "antd";
+import { FormStyle } from "./styles";
+import { PasswordItem, UsernameItem } from "./items";
+import { login } from "../../../api/pdfonline/user";
 
 
 interface LoginFormProps {
@@ -10,13 +11,30 @@ interface LoginFormProps {
 
 const LoginForm = ({setLoggedIn}: LoginFormProps) => {
   const [form] = Form.useForm();
-  const onFinish = async () =>  {
-    login(form.getFieldsValue()).then(user_id => {
+  const onFinish = () =>  {
+    Promise.resolve(login(form.getFieldsValue())).then(user_id => {
       setLoggedIn(true);
       message.success('Log in successfully!');
     }).catch((error) => {
       message.error(error.message);
     })
+  };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleGuest = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    form.setFieldValue('username', 'guest');
+    form.setFieldValue('password', 'guest123');
+    form.submit()
+    setIsModalOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -32,7 +50,18 @@ const LoginForm = ({setLoggedIn}: LoginFormProps) => {
         Log In
       </Button>
       <div>
-        <p>Don't have an account? <a>Sign Up</a></p>
+        <p><>Don't have an account? </>
+          <a>
+            Sign Up
+          </a>
+          <> or </>
+          <Modal title="Basic Modal" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+            Are you sure to log in as a guest?
+          </Modal>
+          <a onClick={handleGuest}>
+            Guest
+          </a>
+        </p>
       </div>
     </Form>
   )

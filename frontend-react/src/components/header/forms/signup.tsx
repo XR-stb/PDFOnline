@@ -1,8 +1,8 @@
-import {Button, Form, message} from "antd";
-import {AgreementItem, CaptchaItem, ConfirmPasswordItem, EmailItem, PasswordItem, UsernameItem} from "./items";
-import {useEffect, useState} from "react";
-import {FormStyle} from "./styles";
-import {getCaptcha, register} from "../../../api/pdfonline/user";
+import { Button, Form, message } from "antd";
+import { AgreementItem, CaptchaItem, ConfirmPasswordItem, EmailItem, PasswordItem, UsernameItem } from "./items";
+import { useEffect, useState } from "react";
+import { FormStyle } from "./styles";
+import { getCaptcha, register } from "../../../api/pdfonline/user";
 
 interface SignUpFormProps {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
