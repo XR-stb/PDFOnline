@@ -18,7 +18,7 @@ const CardComponent = ({pdf}: CardComponentProps) => {
     <Card hoverable style={cardStyle} bodyStyle={{ padding: 0, overflow: 'hidden' }}>
       <Flex justify="space-between">
         {onLoad ? (<></>) : (<LoadingOutlined />)}
-        <img alt="avatar" src={pdf.url} style={imgStyle} onLoad={handleOnLoad} />
+        <img alt="avatar" src={pdf.cover_url} style={imgStyle} onLoad={handleOnLoad} />
         <Flex vertical align="flex-end" justify="space-between" style={{ padding: 32 }}>
           <Typography.Title level={3}>
             {pdf.title}

@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	"backend/pkg/api/apiutil"
-	"backend/pkg/api/apiutil/jwt"
 	"backend/pkg/api/hooks"
 	"backend/pkg/captcha"
 	"backend/pkg/provider"
@@ -46,6 +45,12 @@ func (u UserAPI) Routes() []apiutil.Route {
 			Method:  http.MethodGet,
 			Pattern: "/v1/users/:user_id",
 			Handler: u.Show,
+		},
+		{
+			Method:  http.MethodGet,
+			Pattern: "/v1/users",
+			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleGuest)},
+			Handler: u.ShowMe,
 		},
 		{
 			Method:  http.MethodPatch,
@@ -105,12 +110,7 @@ func (UserAPI) Register(c *gin.Context) {
 		return
 	}
 
-	token := jwt.GenerateToken(&jwt.Claims{
-		UserId:   u.Id(),
-		Username: u.Username(),
-		Role:     u.Role(),
-	})
-	c.SetCookie("token", token, 86400, "/", "", false, true)
+	apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieMaxAge)
 
 	c.JSON(http.StatusOK, gin.H{
 		"user_id": u.Id(),
@@ -193,12 +193,7 @@ func (UserAPI) Login(c *gin.Context) {
 		return
 	}
 
-	token := jwt.GenerateToken(&jwt.Claims{
-		UserId:   u.Id(),
-		Username: u.Username(),
-		Role:     u.Role(),
-	})
-	c.SetCookie("token", token, 86400, "/", "", false, true)
+	apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieMaxAge)
 
 	c.JSON(http.StatusOK, gin.H{
 		"user_id": u.Id(),
@@ -206,12 +201,30 @@ func (UserAPI) Login(c *gin.Context) {
 }
 
 func (UserAPI) Logout(c *gin.Context) {
-	c.SetCookie("token", "", -1, "/", "", false, true)
+	c.Header("Access-Control-Allow-Credentials", "true")
+	c.SetCookie(apiutil.CookieToken, "", apiutil.CookieExpireNow, "/", "", false, false)
 	c.Status(http.StatusOK)
 }
 
 func (UserAPI) Show(c *gin.Context) {
 	u, err := user.GetById(c.Param("user_id"))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+		} else {
+			logrus.Warn(err)
+			c.Status(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": u.Show(),
+	})
+}
+
+func (UserAPI) ShowMe(c *gin.Context) {
+	u, err := user.GetById(c.GetString(apiutil.CtxUserId))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.Status(http.StatusNotFound)

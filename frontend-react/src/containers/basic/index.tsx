@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Layout } from 'antd';
-import {contentStyle} from "./styles";
+import { contentStyle } from "./styles";
 import HeaderComponent from "../../components/header";
 // import FooterComponent from "../../components/footer";
 

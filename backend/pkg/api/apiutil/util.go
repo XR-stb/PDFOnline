@@ -1,6 +1,8 @@
 package apiutil
 
 import (
+	"backend/pkg/api/apiutil/jwt"
+	"backend/pkg/user/role"
 	"errors"
 	"reflect"
 
@@ -78,4 +80,13 @@ func ShouldBindForm(c *gin.Context, obj interface{}) error {
 	}
 
 	return ret
+}
+
+func SetTokenCookie(c *gin.Context, userId, username string, role role.Role, maxAge int) {
+	token := jwt.GenerateToken(&jwt.Claims{
+		UserId:   userId,
+		Username: username,
+		Role:     role,
+	})
+	c.SetCookie(CookieToken, token, maxAge, "/", "", false, false)
 }
