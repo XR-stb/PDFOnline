@@ -17,3 +17,13 @@ export const userPopoverStyle:React.CSSProperties = {
   maxWidth: '80%',
   margin: 'auto',
 }
+
+export const popoverTitleStyle:React.CSSProperties = {
+  borderBottom: '1px solid #ebedf0',
+  fontSize: '20px',
+  fontWeight: 'bold',
+}
+
+export const logoutIconStyle:React.CSSProperties = {
+  color: 'grey',
+}

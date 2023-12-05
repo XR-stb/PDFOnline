@@ -1,5 +1,5 @@
 import {Button, Form, message} from "antd";
-import {DescriptionItem, TitleItem, UploadDraggerItem} from "../../components/forms/items";
+import {DescriptionItem, TitleItem, UploadDraggerItem} from "../../components/form/items";
 
 const UploadForm = () => {
   const [form] = Form.useForm();
@@ -19,14 +19,12 @@ const UploadForm = () => {
       onFinish={onFinish}
       scrollToFirstError
     >
-      <Form.Item>
-        <TitleItem />
-        <DescriptionItem onChange={onInputChange} />
-        <UploadDraggerItem />
-        <Button type="primary" htmlType="submit">
-          Upload
-        </Button>
-      </Form.Item>
+      <TitleItem />
+      <DescriptionItem onChange={onInputChange} />
+      <UploadDraggerItem />
+      <Button type="primary" htmlType="submit">
+        Upload
+      </Button>
     </Form>
   );
 }

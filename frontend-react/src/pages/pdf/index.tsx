@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {message, Row, Col, FloatButton, Modal, Popover} from "antd";
+import {message, Row, Col, FloatButton, Modal, Tooltip} from "antd";
 import { UploadOutlined } from '@ant-design/icons';
+
 import {PdfType, UserType} from "../../types";
 import { listPdfs } from "../../api/pdfonline/pdf";
 import CardComponent from "../../components/card";
@@ -54,10 +55,12 @@ const PDFContent: React.FC<PDFContentProps> = ({ user }) => {
     <>
       {
         user.loggedIn ?
-          <FloatButton icon={<UploadOutlined />} onClick={handleUpload} /> :
-          <Popover placement="topLeft" content={<>Please log in first</>}>
+          <Tooltip placement="topRight" title={'Upload'} color={'blue'}>
+            <FloatButton icon={<UploadOutlined />} onClick={handleUpload} />
+          </Tooltip> :
+          <Tooltip placement="topRight" title={'Please log in first.'} color={'grey'}>
             <FloatButton icon={<UploadOutlined />} />
-          </Popover>
+          </Tooltip>
       }
       <Modal title="Upload" footer={null} open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
         <UploadForm />
