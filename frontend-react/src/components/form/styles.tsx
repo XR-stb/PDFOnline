@@ -17,3 +17,8 @@ export const loginButtonStyle:React.CSSProperties = {
 export const guestLoginIconStyle:React.CSSProperties = {
   color: 'grey'
 }
+
+export const rememberMeItemStyle:React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+}

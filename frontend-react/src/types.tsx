@@ -3,6 +3,7 @@ export interface UserType {
   username: string;
   email: string;
   role: number;
+  avatar: string;
 }
 
 export interface PdfType {

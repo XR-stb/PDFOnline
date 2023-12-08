@@ -1,9 +1,9 @@
 import { PDFOnlineClient } from "./client";
 import { UserType } from "../../types";
 
-export const getCaptcha = (email: string) =>
+export const getRegisterCaptcha = (email: string) =>
   PDFOnlineClient({
-    url: "users/captcha",
+    url: "users/captcha/register",
     method: "post",
     data: { email },
   })
@@ -16,11 +16,11 @@ interface RegisterOpts {
 }
 
 export const register = (data: RegisterOpts) =>
-  PDFOnlineClient<{user_id:string}>({
+  PDFOnlineClient<{user: UserType}>({
     url: "users",
     method: "post",
     data,
-  }).then((data) => data.user_id)
+  }).then((data) => data.user)
 
 interface LoginOpts {
   username: string;
@@ -28,11 +28,17 @@ interface LoginOpts {
 }
 
 export const login = (data: LoginOpts) =>
-  PDFOnlineClient<{user_id:string}>({
+  PDFOnlineClient<{user: UserType}>({
     url: "users/login",
     method: "post",
     data,
-  }).then((data) => data.user_id)
+  }).then((data) => data.user)
+
+export const loginGuest = () =>
+  PDFOnlineClient<{user: UserType}>({
+    url: "users/guest/login",
+    method: "post",
+  }).then((data) => data.user)
 
 export const logout = () =>
   PDFOnlineClient({
@@ -52,3 +58,28 @@ export const getMe = () =>
     method: "get",
     // withCredentials: true,
   }).then((data) => data.user)
+
+interface GetResetPasswordCaptchaOpts {
+  username: string;
+  email: string;
+}
+
+export const getResetPasswordCaptcha = (data: GetResetPasswordCaptchaOpts) =>
+  PDFOnlineClient({
+    url: "users/captcha/password/reset",
+    method: "post",
+    data,
+  })
+
+interface ResetPasswordOpts {
+  username: string;
+  captcha: string;
+  password: string;
+}
+
+export const resetPassword = (data: ResetPasswordOpts) =>
+  PDFOnlineClient({
+    url: `users/password/reset`,
+    method: "put",
+    data,
+  })

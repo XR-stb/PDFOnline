@@ -8,7 +8,7 @@ interface LoginModalProps {
   showSignupModal: () => void
 }
 
-const LoginModal = ({ setLoggedIn, showSignupModal }: LoginModalProps) => {
+const useLoginModal = ({ setLoggedIn, showSignupModal }: LoginModalProps) => {
   const [isLoginModalOpen, setLoginModalOpen] = useState(false)
   const showLoginModal = () => setLoginModalOpen(true)
   const hideLoginModal = () => setLoginModalOpen(false)
@@ -22,4 +22,4 @@ const LoginModal = ({ setLoggedIn, showSignupModal }: LoginModalProps) => {
   return { loginModal, showLoginModal };
 }
 
-export default LoginModal;
+export default useLoginModal;

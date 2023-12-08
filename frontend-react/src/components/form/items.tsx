@@ -12,6 +12,8 @@ import {
 } from "./rules";
 
 import { MouseEventHandler} from "react";
+import {rememberMeItemStyle} from "./styles";
+import useResetPasswordModal from "../modal/resetPass";
 
 export const UsernameItem = () => {
   return (
@@ -85,6 +87,22 @@ export const CaptchaItem = ({ handleGetCaptcha, isCounting, countdown }: Captcha
           {isCounting ? `${countdown} s` : 'Get Captcha'}
         </Button>
       </Space>
+    </Form.Item>
+  );
+}
+
+export const RememberMeItem = () => {
+  const { resetPasswordModal, showResetPasswordModal } = useResetPasswordModal();
+
+  return (
+    <Form.Item
+      name="keep_login"
+      valuePropName="checked"
+    >
+      <div style={rememberMeItemStyle}>
+        {resetPasswordModal}
+        <Checkbox>Remember me</Checkbox><a onClick={showResetPasswordModal}>Forget password?</a>
+      </div>
     </Form.Item>
   );
 }
