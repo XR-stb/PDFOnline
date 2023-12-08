@@ -89,8 +89,8 @@ func TestPdfAPI_List(t *testing.T) {
 
 func TestPdfAPI_Update(t *testing.T) {
 	pdf := models.PDF{
-		Id:     uuid.New().String(),
-		Author: uuid.New().String(),
+		Id:       uuid.New().String(),
+		Uploader: uuid.New().String(),
 	}
 	database.Use(testutil.TestDB(t))
 	db := database.Instance()
@@ -143,8 +143,8 @@ func TestPdfAPI_Update(t *testing.T) {
 
 func TestPdfAPI_Delete(t *testing.T) {
 	pdf := models.PDF{
-		Id:     uuid.New().String(),
-		Author: uuid.New().String(),
+		Id:       uuid.New().String(),
+		Uploader: uuid.New().String(),
 	}
 	database.Use(testutil.TestDB(t))
 	db := database.Instance()

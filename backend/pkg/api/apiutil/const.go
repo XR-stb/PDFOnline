@@ -1,9 +1,10 @@
 package apiutil
 
 const (
-	CookieToken     = "TOKEN"
-	CookieMaxAge    = 86400
-	CookieExpireNow = -1
+	CookieToken      = "TOKEN"
+	CookieKeepOneDay = 86400 // one day
+	CookieNotKeep    = 0
+	CookieExpireNow  = -1
 )
 
 const (

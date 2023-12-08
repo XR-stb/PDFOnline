@@ -38,7 +38,7 @@ func TestUserAPI_Register(t *testing.T) {
 		payload := map[string]any{}
 		err := json.NewDecoder(rec.Body).Decode(&payload)
 		assert.NoError(t, err)
-		_, err = uuid.Parse(payload["user_id"].(string))
+		_, err = uuid.Parse(payload["user"].(map[string]any)["id"].(string))
 		assert.NoError(t, err)
 		cookieHeader := rec.Header().Get("Set-Cookie")
 		assert.NotNil(t, cookieHeader)
@@ -182,7 +182,7 @@ func TestUserAPI_Login(t *testing.T) {
 		payload := map[string]any{}
 		err := json.NewDecoder(rec.Body).Decode(&payload)
 		assert.NoError(t, err)
-		_, err = uuid.Parse(payload["user_id"].(string))
+		_, err = uuid.Parse(payload["user"].(map[string]any)["id"].(string))
 		assert.NoError(t, err)
 		cookieHeader := rec.Header().Get("Set-Cookie")
 		assert.NotNil(t, cookieHeader)
@@ -246,6 +246,7 @@ func TestUserAPI_Show(t *testing.T) {
 			"user": map[string]any{
 				"id":       user.Id,
 				"username": user.Username,
+				"avatar":   "",
 				"email":    user.Email,
 				"role":     float64(user.Role),
 			},
@@ -292,6 +293,7 @@ func TestUserAPI_ShowMe(t *testing.T) {
 				"id":       user.Id,
 				"username": user.Username,
 				"email":    user.Email,
+				"avatar":   "",
 				"role":     float64(user.Role),
 			},
 		}

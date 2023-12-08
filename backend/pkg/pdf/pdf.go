@@ -24,9 +24,10 @@ type PDF struct {
 	db  *gorm.DB
 }
 
-func Create(author, host, title, description string, f *multipart.FileHeader) (*PDF, error) {
+func Create(host, uploader, author, title, description string, f *multipart.FileHeader) (*PDF, error) {
 	pdf := models.PDF{
 		Id:          uuid.New().String(),
+		Uploader:    uploader,
 		Author:      author,
 		Title:       title,
 		Description: description,
@@ -41,6 +42,7 @@ func Create(author, host, title, description string, f *multipart.FileHeader) (*
 
 	coverFilename, err := static.SaveCoverFile(pdf.Id)
 	if err != nil {
+		_ = static.RemovePdfFile(pdf.Id)
 		return nil, err
 	}
 
@@ -83,7 +85,7 @@ func (p *PDF) Id() string {
 }
 
 func (p *PDF) Author() string {
-	return p.pdf.Author
+	return p.pdf.Uploader
 }
 
 func (p *PDF) Save() error {
