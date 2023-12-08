@@ -4,11 +4,12 @@ import (
 	"gorm.io/gorm"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
 	"backend/pkg/database"
 	"backend/pkg/database/models"
 	"backend/test/testutil"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCreate(t *testing.T) {
@@ -38,8 +39,8 @@ func TestList(t *testing.T) {
 
 func TestGetById(t *testing.T) {
 	testPdf := models.PDF{
-		Id:     uuid.New().String(),
-		Author: uuid.New().String(),
+		Id:       uuid.New().String(),
+		Uploader: uuid.New().String(),
 	}
 	database.Use(testutil.TestDB(t))
 	db := database.Instance()
@@ -59,8 +60,8 @@ func TestGetById(t *testing.T) {
 
 func TestPDF_Update(t *testing.T) {
 	testPdf := models.PDF{
-		Id:     uuid.New().String(),
-		Author: uuid.New().String(),
+		Id:       uuid.New().String(),
+		Uploader: uuid.New().String(),
 	}
 	database.Use(testutil.TestDB(t))
 	db := database.Instance()
@@ -86,8 +87,8 @@ func TestPDF_Update(t *testing.T) {
 
 func TestPDF_Delete(t *testing.T) {
 	testPdf := models.PDF{
-		Id:     uuid.New().String(),
-		Author: uuid.New().String(),
+		Id:       uuid.New().String(),
+		Uploader: uuid.New().String(),
 	}
 	database.Use(testutil.TestDB(t))
 	db := database.Instance()

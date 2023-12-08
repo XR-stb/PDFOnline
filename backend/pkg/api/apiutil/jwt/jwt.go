@@ -18,7 +18,7 @@ type Claims struct {
 
 var (
 	secret     = []byte("JwTsEcReT")
-	expireTime = 1 * 24 * time.Hour
+	expireTime = 24 * time.Hour
 	parser     = jwt.Parser{SkipClaimsValidation: true}
 )
 

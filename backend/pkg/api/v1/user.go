@@ -38,19 +38,24 @@ func (u UserAPI) Routes() []apiutil.Route {
 		},
 		{
 			Method:  http.MethodPost,
-			Pattern: "/v1/users/logout",
-			Handler: u.Logout,
+			Pattern: "/v1/users/guest/login",
+			Handler: u.LoginGuest,
 		},
 		{
-			Method:  http.MethodGet,
-			Pattern: "/v1/users/:user_id",
-			Handler: u.Show,
+			Method:  http.MethodPost,
+			Pattern: "/v1/users/logout",
+			Handler: u.Logout,
 		},
 		{
 			Method:  http.MethodGet,
 			Pattern: "/v1/users",
 			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleGuest)},
 			Handler: u.ShowMe,
+		},
+		{
+			Method:  http.MethodGet,
+			Pattern: "/v1/users/:user_id",
+			Handler: u.Show,
 		},
 		{
 			Method:  http.MethodPatch,
@@ -110,10 +115,12 @@ func (UserAPI) Register(c *gin.Context) {
 		return
 	}
 
-	apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieMaxAge)
+	apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieNotKeep)
 
 	c.JSON(http.StatusOK, gin.H{
-		"user_id": u.Id(),
+		"user": gin.H{
+			"id": u.Id(),
+		},
 	})
 }
 
@@ -160,8 +167,9 @@ func (UserAPI) SendCaptcha(c *gin.Context) {
 }
 
 type LoginUserReq struct {
-	Username string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
-	Password string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
+	Username  string `json:"username" binding:"required,min=5,max=32" required:"username is required" min:"username is too short, min 5 chars" max:"username is too long, max 32 chars"`
+	Password  string `json:"password" binding:"required,min=6,max=32" required:"password is required" min:"password is too short, min 6 chars" max:"password is too long, max 32 chars"`
+	KeepLogin bool   `json:"keep_login"`
 }
 
 func (UserAPI) Login(c *gin.Context) {
@@ -193,10 +201,33 @@ func (UserAPI) Login(c *gin.Context) {
 		return
 	}
 
-	apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieMaxAge)
+	if req.KeepLogin {
+		apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieKeepOneDay)
+	} else {
+		apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieNotKeep)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user_id": u.Id(),
+		"user": gin.H{
+			"id": u.Id(),
+		},
+	})
+}
+
+func (UserAPI) LoginGuest(c *gin.Context) {
+	u, err := user.GetByUsername("guest")
+	if err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	apiutil.SetTokenCookie(c, u.Id(), u.Username(), u.Role(), apiutil.CookieNotKeep)
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": gin.H{
+			"id": u.Id(),
+		},
 	})
 }
 

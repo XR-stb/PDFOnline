@@ -48,6 +48,7 @@ func (p PdfAPI) Routes() []apiutil.Route {
 type UploadPdfReq struct {
 	Title       string `form:"title" binding:"required" required:"title is required"`
 	Description string `form:"description" binding:"required" required:"description is required"`
+	Author      string `form:"author" binding:"required" required:"author is required"`
 }
 
 func (PdfAPI) Upload(c *gin.Context) {
@@ -75,7 +76,7 @@ func (PdfAPI) Upload(c *gin.Context) {
 		return
 	}
 
-	_, err = pdf.Create(c.GetString(apiutil.CtxUserId), c.Request.Host, params.Title, params.Description, f)
+	_, err = pdf.Create(c.Request.Host, c.GetString(apiutil.CtxUserId), params.Author, params.Title, params.Description, f)
 	if err != nil {
 		logrus.Warn(err)
 		c.Status(http.StatusInternalServerError)
