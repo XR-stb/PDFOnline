@@ -1,6 +1,6 @@
 import { Button } from "antd";
 
-import LoginModal from "../modal/login";
+import useLoginModal from "../modal/login";
 
 interface LoginButtonProps {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -8,7 +8,7 @@ interface LoginButtonProps {
 }
 
 const LoginButton = ({ setLoggedIn, showSignUpModal }: LoginButtonProps) => {
-  const { loginModal, showLoginModal } = LoginModal({ setLoggedIn, showSignupModal: showSignUpModal });
+  const { loginModal, showLoginModal } = useLoginModal({ setLoggedIn, showSignupModal: showSignUpModal });
   return (
     <>
       <Button

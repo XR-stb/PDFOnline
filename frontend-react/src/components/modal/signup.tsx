@@ -7,7 +7,7 @@ interface SignupModalProps {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const SignUpModal = ({ setLoggedIn }: SignupModalProps) => {
+const useSignUpModal = ({ setLoggedIn }: SignupModalProps) => {
   const [isSignUpModalOpen, setSignUpModalOpen] = useState(false)
   const showSignUpModal = () => setSignUpModalOpen(true)
   const hideSignUpModal = () => setSignUpModalOpen(false)
@@ -21,4 +21,4 @@ const SignUpModal = ({ setLoggedIn }: SignupModalProps) => {
   return { signUpModal, showSignUpModal };
 }
 
-export default SignUpModal;
+export default useSignUpModal;

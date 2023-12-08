@@ -5,12 +5,11 @@ export class HTTPError extends Error {
 
   constructor(message?: string, status?: number) {
     if (status === 404) {
-      super("internal server error");
-      this.status = 500;
+      super("resource not found");
     } else {
       super(message || "internal server error");
-      this.status = status || 500;
     }
+    this.status = status || 500;
   }
 }
 

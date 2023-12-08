@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Button, Form, message } from "antd";
 
-import { AgreementItem, CaptchaItem, ConfirmPasswordItem, EmailItem, PasswordItem, UsernameItem } from "./items";
+import { CaptchaItem, ConfirmPasswordItem, EmailItem, PasswordItem, UsernameItem } from "./items";
 import { formStyle, signUpButtonStyle } from "./styles";
-import { getRegisterCaptcha, register } from "../../api/pdfonline/user";
+import { getResetPasswordCaptcha,  resetPassword} from "../../api/pdfonline/user";
 
-interface SignUpFormProps {
-  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
+interface ResetPasswordFormProps {
+  hideResetPasswordModal: () => void;
 }
 
-const SignUpForm = ({ setLoggedIn }: SignUpFormProps) => {
+const ResetPasswordForm = (props: ResetPasswordFormProps) => {
   const [ form ] = Form.useForm();
   const onFinish = async () =>  {
-    register(form.getFieldsValue()).then(user_id => {
-      setLoggedIn(true);
-      message.success('Sign Up successfully!');
+    Promise.resolve(resetPassword(form.getFieldsValue())).then(user_id => {
+      message.success('Reset password successfully!');
+      props.hideResetPasswordModal();
     }).catch((error) => {
       message.error(error.message);
     })
@@ -26,10 +26,32 @@ const SignUpForm = ({ setLoggedIn }: SignUpFormProps) => {
     try {
       await form.validateFields(['email']);
 
-      getRegisterCaptcha(form.getFieldValue('email')).then(() => {
+      let data = {
+        username: form.getFieldValue('username'),
+        email: form.getFieldValue('email'),
+      }
+
+      getResetPasswordCaptcha(data).then(() => {
         setIsCounting(true);
       }).catch((error) => {
-        message.error(error.message);
+        let errmsg = error.message;
+        if (error.status === 404) {
+          errmsg = 'username not exist!';
+          form.setFields([{
+            name: 'username',
+            errors: [errmsg],
+          }]);
+        }
+
+        if (error.status === 400) {
+          errmsg = 'email not match!';
+          form.setFields([{
+            name: 'email',
+            errors: [errmsg],
+          }]);
+        }
+
+        message.error(errmsg);
       });
     } catch (error) {
       return
@@ -57,18 +79,17 @@ const SignUpForm = ({ setLoggedIn }: SignUpFormProps) => {
   }, [isCounting]);
 
   return (
-    <Form form={form} name="signup" onFinish={onFinish} style={formStyle}>
+    <Form form={form} name="resetPassword" onFinish={onFinish} style={formStyle}>
       <UsernameItem />
-      <PasswordItem />
-      <ConfirmPasswordItem />
       <EmailItem />
       <CaptchaItem handleGetCaptcha={HandleGetCaptcha} isCounting={isCounting} countdown={countdown} />
-      <AgreementItem />
+      <PasswordItem />
+      <ConfirmPasswordItem />
       <Button type="primary" htmlType="submit" style={signUpButtonStyle}>
-        Sign Up
+        Reset Password
       </Button>
     </Form>
   )
 }
 
-export default SignUpForm;
+export default ResetPasswordForm;

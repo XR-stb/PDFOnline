@@ -106,8 +106,8 @@ func TestUserAPI_SendCaptcha(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendCaptchaReq{Email: testEmail})
-		UserAPI{}.SendCaptcha(c)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendRegisterCaptchaReq{Email: testEmail})
+		UserAPI{}.SendRegisterCaptcha(c)
 
 		c.Writer.WriteHeaderNow()
 		assert.Equal(t, http.StatusCreated, rec.Code)
@@ -116,8 +116,8 @@ func TestUserAPI_SendCaptcha(t *testing.T) {
 	t.Run("email is empty", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendCaptchaReq{})
-		UserAPI{}.SendCaptcha(c)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendRegisterCaptchaReq{})
+		UserAPI{}.SendRegisterCaptcha(c)
 
 		c.Writer.WriteHeaderNow()
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -130,8 +130,8 @@ func TestUserAPI_SendCaptcha(t *testing.T) {
 	t.Run("email is invalid", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendCaptchaReq{Email: "testEmail"})
-		UserAPI{}.SendCaptcha(c)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendRegisterCaptchaReq{Email: "testEmail"})
+		UserAPI{}.SendRegisterCaptcha(c)
 
 		c.Writer.WriteHeaderNow()
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -149,8 +149,8 @@ func TestUserAPI_SendCaptcha(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(rec)
-		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendCaptchaReq{Email: testEmail})
-		UserAPI{}.SendCaptcha(c)
+		c.Request = testutil.NewRequest(t, http.MethodPost, "/users/captcha", SendRegisterCaptchaReq{Email: testEmail})
+		UserAPI{}.SendRegisterCaptcha(c)
 
 		c.Writer.WriteHeaderNow()
 		assert.Equal(t, http.StatusBadRequest, rec.Code)

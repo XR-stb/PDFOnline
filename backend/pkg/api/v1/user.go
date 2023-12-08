@@ -28,8 +28,8 @@ func (u UserAPI) Routes() []apiutil.Route {
 		},
 		{
 			Method:  http.MethodPost,
-			Pattern: "/v1/users/captcha",
-			Handler: u.SendCaptcha,
+			Pattern: "/v1/users/captcha/register",
+			Handler: u.SendRegisterCaptcha,
 		},
 		{
 			Method:  http.MethodPost,
@@ -74,6 +74,16 @@ func (u UserAPI) Routes() []apiutil.Route {
 			Pattern: "/v1/users/:user_id/role",
 			Hooks:   gin.HandlersChain{hooks.Auth(role.RoleAdmin)},
 			Handler: u.UpdateRole,
+		},
+		{
+			Method:  http.MethodPut,
+			Pattern: "/v1/users/password/reset",
+			Handler: u.ResetPassword,
+		},
+		{
+			Method:  http.MethodPost,
+			Pattern: "/v1/users/captcha/password/reset",
+			Handler: u.SendResetPasswordCaptcha,
 		},
 	}
 }
@@ -124,7 +134,7 @@ func (UserAPI) Register(c *gin.Context) {
 	})
 }
 
-type SendCaptchaReq struct {
+type SendRegisterCaptchaReq struct {
 	Email string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
 }
 
@@ -133,8 +143,8 @@ var (
 	subjectTemplate = `Verification Code`
 )
 
-func (UserAPI) SendCaptcha(c *gin.Context) {
-	var req SendCaptchaReq
+func (UserAPI) SendRegisterCaptcha(c *gin.Context) {
+	var req SendRegisterCaptchaReq
 	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -379,4 +389,90 @@ func (UserAPI) UpdateRole(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+type ResetPasswordReq struct {
+	Username string `json:"username" binding:"required" required:"username is required"`
+	Captcha  string `json:"captcha" binding:"required,len=6" required:"captcha is required" len:"length of captcha should be 6"`
+	Password string `json:"password" binding:"required,min=6,max=32" required:"new_password is required" min:"new_password is too short, min 6 chars" max:"new_password is too long, max 32 chars"`
+}
+
+func (UserAPI) ResetPassword(c *gin.Context) {
+	var req ResetPasswordReq
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	u, err := user.GetByUsername(req.Username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+		} else {
+			logrus.Warn(err)
+			c.Status(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	err = captcha.Verify(u.Email(), req.Captcha)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	err = u.Update(&user.UpdateOption{Password: &req.Password})
+	if err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+type SendResetPasswordCaptchaReq struct {
+	Username string `json:"username" binding:"required" required:"username is required"`
+	Email    string `json:"email" binding:"required,email" required:"email is required" email:"email is invalid"`
+}
+
+func (UserAPI) SendResetPasswordCaptcha(c *gin.Context) {
+	var req SendResetPasswordCaptchaReq
+	if err := apiutil.ShouldBindJSON(c, &req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	u, err := user.GetByUsername(req.Username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+		} else {
+			logrus.Warn(err)
+			c.Status(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if u.Email() != req.Email {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "username and email do not match",
+		})
+		return
+	}
+
+	err = provider.Send(req.Email, subjectTemplate, fmt.Sprintf(bodyTemplate, captcha.Generate(req.Email)))
+	if err != nil {
+		logrus.Warn(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusCreated)
 }

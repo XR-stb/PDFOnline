@@ -1,9 +1,9 @@
 import { Button, Form, message, Popconfirm } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 
-import { formStyle, guestLoginIconStyle } from "./styles";
-import { PasswordItem, UsernameItem } from "./items";
-import { login } from "../../api/pdfonline/user";
+import { formStyle, guestLoginIconStyle, loginButtonStyle } from "./styles";
+import { PasswordItem, RememberMeItem, UsernameItem } from "./items";
+import { login, loginGuest } from "../../api/pdfonline/user";
 
 interface LoginFormProps {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -23,9 +23,12 @@ const LoginForm = ({ setLoggedIn, hideLoginModal, showSignUpModal}: LoginFormPro
   };
 
   const handleOk = () => {
-    form.setFieldValue('username', 'guest');
-    form.setFieldValue('password', 'guest123');
-    form.submit()
+    Promise.resolve(loginGuest()).then(user_id => {
+      setLoggedIn(true);
+      message.success('Log in successfully!');
+    }).catch((error) => {
+      message.error(error.message);
+    })
   };
 
   const handleSignUp = () => {
@@ -42,7 +45,7 @@ const LoginForm = ({ setLoggedIn, hideLoginModal, showSignUpModal}: LoginFormPro
       scrollToFirstError
     >
       <Items />
-      <Button type="primary" htmlType="submit" style={{width: '100%'}}>
+      <Button type="primary" htmlType="submit" style={loginButtonStyle}>
         Log In
       </Button>
       <p>
@@ -62,6 +65,7 @@ const Items = () => {
     <>
       <UsernameItem />
       <PasswordItem />
+      <RememberMeItem />
     </>
   )
 }

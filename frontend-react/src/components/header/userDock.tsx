@@ -1,7 +1,7 @@
-import {Avatar, Button, Divider, Popconfirm, Popover, Space} from "antd";
+import { Avatar, Button, Popconfirm, Popover, Space } from "antd";
 import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
 
-import {logoutIconStyle, popoverTitleStyle, userPopoverStyle} from "./styles";
+import { logoutIconStyle, popoverTitleStyle, userPopoverStyle } from "./styles";
 import { logout } from "../../api/pdfonline/user";
 import { UserType } from "../../types";
 
@@ -14,7 +14,7 @@ const UserDock = ({user, setLoggedIn}: UserProps) => {
   return (
     <Popover placement={"bottomRight"} title={<p style={popoverTitleStyle}>{user?.username}</p>} content={<PopoverContent user={user} setLoggedIn={setLoggedIn} />} style={userPopoverStyle} trigger={"click"}>
       <Space style={{cursor: 'pointer'}}>
-        <Avatar icon={<UserOutlined />} />
+        {user?.avatar ? <Avatar src={user.avatar} /> : <Avatar icon={<UserOutlined />} />}
         {user?.username}
       </Space>
     </Popover>
