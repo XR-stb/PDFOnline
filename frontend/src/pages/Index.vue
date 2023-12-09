@@ -7,18 +7,35 @@
 
         <div class="maintainer">
             <div class="left">
-                <el-col class="mb-4 bt-col">
-                    <el-button type="success" class="mb-2">主题</el-button>
+                <div class="theme slider">
+                    <img src="../assets/更多.png" alt="" class="slider-img">
+                </div>
+                <div class="login slider">
                     <router-link to="/login">
-                        <el-button type="success" class="mb-2">登录</el-button>
+                        <img src="../assets/登录.png" alt="" class="slider-img">
                     </router-link>
-                    <el-button type="success" class="mb-2">上传</el-button>
-                    <el-button type="success" class="mb-2">首页</el-button>
-                </el-col>
-                <!-- <div class="theme">主题</div>
-                <div class="login">登录</div>
-                <div class="upload">上传</div>
-                <div class="home">首页</div> -->
+                </div>
+                <div class="upload slider" @click="openUploadDialog">
+                    <img src="../assets/上传.png" alt="" class="slider-img">
+                </div>
+                <div class="upload-container" v-if="showUploadDialog">
+                    <el-upload class="upload-demo upload-box" drag
+                        action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15" multiple>
+                        <!-- <el-icon class="el-icon--upload"><upload-filled /></el-icon> -->
+                        <img src="../assets/upload.png" alt="" class="upload-img">
+                        <div class="el-upload__text upload-bg">
+                            Drop file here or <em>click to upload</em>
+                        </div>
+                        <template #tip>
+                            <div class="el-upload__tip">
+                                jpg/png files with a size less than 500kb
+                            </div>
+                        </template>
+                    </el-upload>
+                </div>
+                <div class="home slider">
+                    <img src="../assets/首页.png" alt="" class="slider-img">
+                </div>
             </div>
             <div class="right">
                 <!-- PDF列表 -->
@@ -32,30 +49,11 @@
                 </div>
             </div>
         </div>
-
-        <!-- 分页控制 -->
-        <!-- <div class="pagination">
-            <button @click="prevPage" :disabled="currentPage === 1">
-                上一页
-            </button>
-            <span>{{ currentPage }} / {{ totalPages }}</span>
-            <button @click="nextPage" :disabled="currentPage === totalPages">
-                下一页
-            </button>
-        </div> -->
-
-        <!-- 底部功能按钮 -->
-        <!-- <footer>
-            <button @click="showMore">更多</button>
-            <button @click="login">登录</button>
-            <button @click="goHome">首页</button>
-            <button @click="toggleBackgroundMode">背景模式</button>
-            <button @click="upload">上传</button>
-        </footer> -->
     </div>
 </template>
   
 <script>
+import { UploadFilled } from '@element-plus/icons-vue'
 export default {
     data() {
         return {
@@ -63,12 +61,16 @@ export default {
             displayedPDFs: [], // 当前页面显示的 PDF 数据
             itemsPerPage: 8, // 每页显示的 PDF 数量
             currentPage: 1, // 当前页数
+            showUploadDialog: false
         };
     },
     created() {
         this.fetchPDFList();
     },
     methods: {
+        openUploadDialog() {
+            this.showUploadDialog= true
+        },
         async fetchPDFList() {
             try {
                 const response = await this.$axios.get(
@@ -89,57 +91,15 @@ export default {
             const pdfUrl = this.downloadBaseURL + pdfFileName;
             window.location.href = pdfUrl;
         },
-        prevPage() {
-            if (this.currentPage > 1) {
-                this.currentPage--;
-                this.updateDisplayedPDFs();
-            }
-        },
-        nextPage() {
-            if (this.currentPage < this.totalPages) {
-                this.currentPage++;
-                this.updateDisplayedPDFs();
-            }
-        },
         updateDisplayedPDFs() {
             const startIdx = (this.currentPage - 1) * this.itemsPerPage;
             const endIdx = startIdx + this.itemsPerPage;
             this.displayedPDFs = this.pdfList.slice(startIdx, endIdx);
         },
-        showMore() {
-            // 处理“更多”按钮点击事件
-            // ...
-            alert("more");
-        },
-        login() {
-            // 处理“登录”按钮点击事件
-            // ...
-            alert("login");
-        },
-        goHome() {
-            // 处理“首页”按钮点击事件
-            // ...
-            alert("gohome");
-        },
-        toggleBackgroundMode() {
-            // 处理“背景模式”按钮点击事件
-            // ...
-            alert("backgroud");
-        },
-        upload() {
-            // 处理“上传”按钮点击事件
-            // ...
-            alert("upload");
-        },
-    },
-    computed: {
-        totalPages() {
-            return Math.ceil(this.pdfList.length / this.itemsPerPage);
-        },
     },
 };
 </script>
-  
+
 <style>
 @import "../css/index.css";
 </style>
