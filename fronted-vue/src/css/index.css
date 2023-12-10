@@ -59,6 +59,7 @@ h1 {
     /* 添加过渡效果，使颜色变化平滑 */
     position: relative;
     border-radius: 3%;
+    /* z-index: -1; */
 }
 
 .pdf-block:hover {
@@ -82,7 +83,8 @@ footer button {
     height: 150px;
     border: 1px solid gray;
     position: absolute;
-    top: 30px; /* 向下移动的距离 */
+    top: 30px;
+    /* 向下移动的距离 */
 }
 
 .title {
@@ -92,14 +94,16 @@ footer button {
     color: rgb(65, 191, 216);
     /* bottom: 100px; */
     position: relative;
-    top: 100px; /* 向下移动的距离 */
+    top: 100px;
+    /* 向下移动的距离 */
 }
 
 .desc {
     position: relative;
     /* bottom: 30px; */
     /* position: relative; */
-    top: 70px; /* 向下移动的距离 */
+    top: 70px;
+    /* 向下移动的距离 */
 }
 
 .bt-col {
@@ -114,5 +118,56 @@ footer button {
 
 .left {
     position: fixed;
-    top: 60%;
+    top: 68%;
+    left: 1%;
+}
+
+.slider {
+    height: 30px;
+    width: 30px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.slider-img {
+    height: 100%;
+    width: 100%;
+}
+
+.slider-img:hover {
+    background: rgb(231, 226, 226);
+}
+
+.upload-container {
+    height: 300px;
+    width: 300px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    overflow: auto;
+    z-index: 2;
+}
+
+.upload-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: red;
+    height: 30%;
+    width: 30%;
+    z-index: 2;
+}
+
+.upload-bg {
+    background: red;
+}
+
+.upload-img {
+    width: 100px;
+    height: 100px;
+}
+
+.upload-demo {
+    z-index: 2;
 }
