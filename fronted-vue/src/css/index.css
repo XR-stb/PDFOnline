@@ -59,6 +59,7 @@ h1 {
     /* 添加过渡效果，使颜色变化平滑 */
     position: relative;
     border-radius: 3%;
+    /* z-index: -1; */
 }
 
 .pdf-block:hover {
@@ -143,10 +144,8 @@ footer button {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    background: red;
-    z-index: 9999;
     overflow: auto;
+    z-index: 2;
 }
 
 .upload-box {
@@ -157,7 +156,7 @@ footer button {
     background: red;
     height: 30%;
     width: 30%;
-    z-index: 9999999;
+    z-index: 2;
 }
 
 .upload-bg {
@@ -167,4 +166,8 @@ footer button {
 .upload-img {
     width: 100px;
     height: 100px;
+}
+
+.upload-demo {
+    z-index: 2;
 }

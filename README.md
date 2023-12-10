@@ -1,18 +1,15 @@
 # PDFOnline
 
-
 ## Start
 
-### frontend
+### frontend-vue
 
-node.js >= 14.0
-
-npm >= 9.5.0
+node.js >= 18.0
 
 ```shell
-cd frontend
+cd frontend-vue
 npm install
-npm run serve
+vite
 ```
 
 ## backend

@@ -15,8 +15,10 @@
                         <img src="../assets/登录.png" alt="" class="slider-img">
                     </router-link>
                 </div>
-                <div class="upload slider" @click="openUploadDialog">
-                    <img src="../assets/上传.png" alt="" class="slider-img">
+                <div class="upload slider">
+                    <router-link to="/upload">
+                        <img src="../assets/上传.png" alt="" class="slider-img">
+                    </router-link>
                 </div>
                 <div class="upload-container" v-if="showUploadDialog">
                     <el-upload class="upload-demo upload-box" drag
@@ -39,8 +41,8 @@
             </div>
             <div class="right">
                 <!-- PDF列表 -->
-                <div class="pdf-container">
-                    <div v-for="pdf in pdfList" :key="pdf.title" class="pdf-block" @click="openPDF(pdf.url)">
+                <div class="pdf-container" ref="pdfContainer">
+                    <div ref="pdfBlock" v-for="pdf in pdfList" :key="pdf.title" class="pdf-block" @click="openPDF(pdf.url)">
                         <!-- <img :src="pdf.cover_url" alt="加载封面失败" class="cover"> -->
                         <el-image :src="pdf.cover_url" :fit="fit" class="cover"></el-image>
                         <p class="title">{{ pdf.title }}</p>
@@ -53,7 +55,6 @@
 </template>
   
 <script>
-import { UploadFilled } from '@element-plus/icons-vue'
 export default {
     data() {
         return {
@@ -68,9 +69,6 @@ export default {
         this.fetchPDFList();
     },
     methods: {
-        openUploadDialog() {
-            this.showUploadDialog= true
-        },
         async fetchPDFList() {
             try {
                 const response = await this.$axios.get(
